@@ -1,6 +1,7 @@
 package index
 
 import (
+	"Duckweed/buffer"
 	"Duckweed/databox"
 	"Duckweed/page"
 )
@@ -21,6 +22,7 @@ import (
 const FillFactor = 0.75
 
 type IndexNode struct {
+	bf          buffer.BufferPool
 	maxKVNumber int
 	page        *page.Page
 	keys        []int // 键后续可能会扩展(多种类型) 但我要想先做个int的试试
@@ -29,6 +31,11 @@ type IndexNode struct {
 
 // TODO 想出有哪些meta信息
 
+func GetIndexNode(pageID int) *IndexNode {
+	// TODO 获取索引节点
+	return nil
+}
+
 func (node *IndexNode) GetPage() *page.Page {
 	return node.page
 }
@@ -36,7 +43,7 @@ func (node *IndexNode) GetPage() *page.Page {
 func (node *IndexNode) ToBytes() []byte {
 	header := make([]byte, 1)
 	header[0] = IndexNodeFlag
-	if len(node.keys)-len(node.children) != 1 {
+	if len(node.keys)-len(node.children) != -1 {
 		// 数值不对啊
 		panic("Keys Should equal ChildrenNumber - 1 ╰(*°▽°*)╯ ")
 	}
@@ -65,6 +72,10 @@ func (node *IndexNode) shouldSplit() bool {
 	return node.maxKVNumber >= int(FillFactor*float64(len(node.keys)))
 }
 
+// 同步这个节点的数据到缓存上的页面上
+// 因为传的是指针
+// 所以修改的时候会修改缓存中的页面
+// (前提是这个页是从缓存中拿取的)
 func (node *IndexNode) sync() {
 	node.page.WriteBytes(node.ToBytes())
 }
@@ -91,7 +102,7 @@ func IndexNodeFromPage(p *page.Page) *IndexNode {
 	}
 	for i := 0; i < int(childrenNumber); i++ {
 		b := [8]byte{}
-		copy(b[:], bytes[page.PageSize+1-(i+1)*8:page.PageSize+1-i*8])
+		copy(b[:], bytes[page.PageSize-(i+1)*8:page.PageSize-i*8])
 		num := databox.BytesToInt(b)
 		children[i] = int(num)
 	}

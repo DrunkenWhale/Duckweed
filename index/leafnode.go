@@ -1,8 +1,12 @@
 package index
 
-import "Duckweed/page"
+import (
+	"Duckweed/buffer"
+	"Duckweed/page"
+)
 
 type LeafNode struct {
+	bf           buffer.BufferPool
 	maxKVNumber  int
 	page         *page.Page
 	keys         []int // 键后续可能会扩展(多种类型) 但我要想先做个int的试试
