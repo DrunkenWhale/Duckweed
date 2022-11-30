@@ -1,6 +1,6 @@
 package page
 
-const PageSize = 4096
+const PageSize int = 4096
 
 type Page struct {
 	pageID int

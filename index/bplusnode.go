@@ -10,11 +10,16 @@ type BPlusNode interface {
 
 func FromPage(page *page.Page) BPlusNode {
 	flag := page.GetBytes()[0]
-	if flag == 1 {
+	if flag == IndexNodeFlag {
 		return IndexNodeFromPage(page)
-	} else if flag == 2 {
+	} else if flag == LeafNodeFlag {
 		return LeafNodeFromPage(page)
 	} else {
 		panic("Illegal Page!")
 	}
 }
+
+const (
+	IndexNodeFlag = iota + 1
+	LeafNodeFlag
+)
