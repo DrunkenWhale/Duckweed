@@ -6,8 +6,8 @@ type BPlusNode interface {
 	ToBytes() []byte
 	// GetPage 存储该节点的页
 	GetPage() *page.Page
-	// GetNode 从buffer pool中拿取页转化为node
-	GetNode(pageID int) BPlusNode
+	// FetchNode 从buffer pool中拿取页转化为node
+	FetchNode(pageID int) BPlusNode
 }
 
 func FromPage(page *page.Page) BPlusNode {

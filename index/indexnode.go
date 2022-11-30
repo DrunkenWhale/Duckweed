@@ -29,10 +29,7 @@ type IndexNode struct {
 	children    []int
 }
 
-// TODO 想出有哪些meta信息
-
-func (node *IndexNode) GetNode(pageID int) BPlusNode {
-	// TODO 获取索引节点
+func (node *IndexNode) FetchNode(pageID int) BPlusNode {
 	p := node.bf.GetPage(pageID)
 	n := FromPage(p)
 	return n

@@ -18,8 +18,13 @@ func NewLRUBufferPool() *LRUBufferPool {
 		pageNumber: MaxPageNumber,
 		pool:       make(map[int]*page.Page),
 		lru2q:      lru.NewLRU2Q(MaxPageNumber/4*3, MaxPageNumber/4),
-		disk:       disk.NewDummyDiskManager(),
+		disk:       disk.NewFSDiskManager(),
 	}
+}
+
+func (bf *LRUBufferPool) PutPage(page *page.Page) {
+	bf.lru2q.Push(page.GetPageID())
+	bf.pool[page.GetPageID()] = page
 }
 
 func (bf *LRUBufferPool) GetPage(pageID int) *page.Page {
