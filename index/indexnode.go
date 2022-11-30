@@ -31,9 +31,11 @@ type IndexNode struct {
 
 // TODO 想出有哪些meta信息
 
-func GetIndexNode(pageID int) *IndexNode {
+func (node *IndexNode) GetNode(pageID int) BPlusNode {
 	// TODO 获取索引节点
-	return nil
+	p := node.bf.GetPage(pageID)
+	n := FromPage(p)
+	return n
 }
 
 func (node *IndexNode) GetPage() *page.Page {

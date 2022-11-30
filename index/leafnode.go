@@ -14,6 +14,12 @@ type LeafNode struct {
 	rightSibling int
 }
 
+func (node *LeafNode) GetNode(pageID int) BPlusNode {
+	p := node.bf.GetPage(pageID)
+	n := FromPage(p)
+	return n
+}
+
 func (node *LeafNode) GetPage() *page.Page {
 	return node.page
 }
