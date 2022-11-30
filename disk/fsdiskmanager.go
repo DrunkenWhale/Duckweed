@@ -1,13 +1,12 @@
 package disk
 
 import (
-	"Duckweed/index"
+	"Duckweed/page"
 	"io/fs"
 	"os"
 )
 
 const (
-	PageSize    = 4096
 	StoragePath = "data"
 )
 
@@ -19,7 +18,7 @@ type FSDiskManager struct {
 
 func NewFSDiskManager() *FSDiskManager {
 	dm := &FSDiskManager{
-		pageSize:    PageSize,
+		pageSize:    page.PageSize,
 		storagePath: StoragePath,
 		file:        nil,
 	}
@@ -27,18 +26,18 @@ func NewFSDiskManager() *FSDiskManager {
 	return dm
 }
 
-func (dm *FSDiskManager) Write(page *index.Page) {
+func (dm *FSDiskManager) Write(page *page.Page) {
 	pageID := page.GetPageID()
-	bytes := page.ToBytes()
+	bytes := page.GetBytes()
 	dm.writePageBytes(bytes, pageID)
 }
 
-func (dm *FSDiskManager) Read(pageID int) *index.Page {
+func (dm *FSDiskManager) Read(pageID int) *page.Page {
 	bytes := dm.readPageBytes(pageID)
-	return index.FromBytes(bytes)
+	return page.NewPage(pageID, bytes)
 }
 
-func (dm *FSDiskManager) BatchWrite(pages []*index.Page) {
+func (dm *FSDiskManager) BatchWrite(pages []*page.Page) {
 	for _, p := range pages {
 		dm.Write(p)
 	}

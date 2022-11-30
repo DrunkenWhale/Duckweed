@@ -1,7 +1,7 @@
 package disk
 
 import (
-	"Duckweed/index"
+	"Duckweed/page"
 	"fmt"
 )
 
@@ -12,11 +12,11 @@ func NewDummyDiskManager() *DummyDiskManager {
 	return &DummyDiskManager{}
 }
 
-func (dm *DummyDiskManager) Write(page *index.Page) {
-	fmt.Printf("Write Page(ID=%d)To \n", page.GetPageID())
+func (dm *DummyDiskManager) Write(page *page.Page) {
+	fmt.Printf("Write Page(ID=%d) To Disk \n", page.GetPageID())
 }
 
-func (dm *DummyDiskManager) BatchWrite(pages []*index.Page) {
+func (dm *DummyDiskManager) BatchWrite(pages []*page.Page) {
 	fmt.Println("Start Batch Write")
 	for _, p := range pages {
 		dm.Write(p)
@@ -25,6 +25,6 @@ func (dm *DummyDiskManager) BatchWrite(pages []*index.Page) {
 	return
 }
 
-func (dm *DummyDiskManager) Read(pageID int) *index.Page {
+func (dm *DummyDiskManager) Read(pageID int) *page.Page {
 	return nil
 }

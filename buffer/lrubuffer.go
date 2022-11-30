@@ -2,13 +2,13 @@ package buffer
 
 import (
 	"Duckweed/disk"
-	"Duckweed/index"
 	"Duckweed/lru"
+	"Duckweed/page"
 )
 
 type LRUBufferPool struct {
 	pageNumber int
-	pool       map[int]*index.Page
+	pool       map[int]*page.Page
 	lru2q      *lru.LRU2Q
 	disk       disk.DiskManager
 }
@@ -16,13 +16,13 @@ type LRUBufferPool struct {
 func NewLRUBufferPool() *LRUBufferPool {
 	return &LRUBufferPool{
 		pageNumber: MaxPageNumber,
-		pool:       make(map[int]*index.Page),
+		pool:       make(map[int]*page.Page),
 		lru2q:      lru.NewLRU2Q(MaxPageNumber/4*3, MaxPageNumber/4),
 		disk:       disk.NewDummyDiskManager(),
 	}
 }
 
-func (bf *LRUBufferPool) GetPage(pageID int) *index.Page {
+func (bf *LRUBufferPool) GetPage(pageID int) *page.Page {
 	// 先走LRU
 	// 更新置换策略
 	if out := bf.lru2q.Push(pageID); out != -1 {
@@ -31,7 +31,7 @@ func (bf *LRUBufferPool) GetPage(pageID int) *index.Page {
 		if !flag {
 			// 写map的操作和lru的push一定是一起完成的
 			// 不可能不存在于map中
-			panic("Illegal Page Request")
+			panic("Illegal BPlusNode Request")
 		}
 		// 把页刷到磁盘上
 		bf.disk.Write(p)
@@ -53,7 +53,7 @@ func (bf *LRUBufferPool) GetPage(pageID int) *index.Page {
 
 // Flush 这个操作会把所有的页都刷盘
 func (bf *LRUBufferPool) Flush() {
-	pages := make([]*index.Page, len(bf.pool))
+	pages := make([]*page.Page, len(bf.pool))
 	i := 0
 	for _, p := range bf.pool {
 		pages[i] = p

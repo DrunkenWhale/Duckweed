@@ -1,9 +1,11 @@
 package disk
 
-import "Duckweed/index"
+import (
+	"Duckweed/page"
+)
 
 type DiskManager interface {
-	Write(page *index.Page)
-	Read(pageID int) *index.Page
-	BatchWrite(pages []*index.Page)
+	Write(page *page.Page)
+	Read(pageID int) *page.Page
+	BatchWrite(pages []*page.Page)
 }
