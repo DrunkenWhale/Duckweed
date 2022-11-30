@@ -1,6 +1,13 @@
 package index
 
+import "Duckweed/page"
+
 type IndexNode struct {
+}
+
+func (node *IndexNode) GetPage() *page.Page {
+	//TODO implement me
+	panic("implement me")
 }
 
 func (node *IndexNode) ToBytes() []byte {
@@ -8,6 +15,6 @@ func (node *IndexNode) ToBytes() []byte {
 	panic("implement me")
 }
 
-func IndexNodeFromBytes(bytes []byte) *IndexNode {
+func IndexNodeFromPage(page *page.Page) *IndexNode {
 	return nil
 }

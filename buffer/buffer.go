@@ -5,7 +5,7 @@ import (
 )
 
 const (
-	// MaxPageNumber 最大缓存 16 * 4096 Byte
+	// MaxPageNumber 最大缓存 16 * PageSize Byte
 	MaxPageNumber = 16
 )
 

@@ -18,6 +18,7 @@ func (p *Page) GetPageID() int {
 	return p.pageID
 }
 
+// GetBytes 不能修改这个Byte数组
 func (p *Page) GetBytes() []byte {
 	return p.bytes
 }
