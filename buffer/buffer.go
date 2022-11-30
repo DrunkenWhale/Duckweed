@@ -12,8 +12,8 @@ type BufferPool interface {
 	GetPage(pageID int) *page.Page
 	// Flush all dirty page to disk
 	Flush()
-	// Pin 固定一个页面 防止其释放
-	Pin(pageID int)
-	// UnPin 放开一个页面捏
-	UnPin(pageID int)
+	//// Pin 固定一个页面 防止其释放
+	//Pin(pageID int)
+	//// UnPin 放开一个页面捏
+	//UnPin(pageID int)
 }

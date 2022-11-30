@@ -13,6 +13,15 @@ type LRUBufferPool struct {
 	disk       disk.DiskManager
 }
 
+func NewLRUBufferPool() *LRUBufferPool {
+	return &LRUBufferPool{
+		pageNumber: MaxPageNumber,
+		pool:       make(map[int]*page.Page),
+		lru2q:      lru.NewLRU2Q(MaxPageNumber/4*3, MaxPageNumber/4),
+		disk:       disk.NewDummyDiskManager(),
+	}
+}
+
 func (bf *LRUBufferPool) GetPage(pageID int) *page.Page {
 	// 先走LRU
 	// 更新置换策略
@@ -45,19 +54,11 @@ func (bf *LRUBufferPool) GetPage(pageID int) *page.Page {
 // Flush 这个操作会把所有的页都刷盘
 func (bf *LRUBufferPool) Flush() {
 	pages := make([]*page.Page, len(bf.pool))
-	for i, p := range bf.pool {
+	i := 0
+	for _, p := range bf.pool {
 		pages[i] = p
+		i++
 	}
 	bf.disk.BatchWrite(pages)
 	return
-}
-
-func (bf *LRUBufferPool) Pin(pageID int) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (bf *LRUBufferPool) UnPin(pageID int) {
-	//TODO implement me
-	panic("implement me")
 }
