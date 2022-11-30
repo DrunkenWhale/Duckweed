@@ -42,9 +42,14 @@ func (bf *LRUBufferPool) GetPage(pageID int) *page.Page {
 	return pg
 }
 
+// Flush 这个操作会把所有的页都刷盘
 func (bf *LRUBufferPool) Flush() {
-	//TODO implement me
-	panic("implement me")
+	pages := make([]*page.Page, len(bf.pool))
+	for i, p := range bf.pool {
+		pages[i] = p
+	}
+	bf.disk.BatchWrite(pages)
+	return
 }
 
 func (bf *LRUBufferPool) Pin(pageID int) {
