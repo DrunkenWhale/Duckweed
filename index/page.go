@@ -1,4 +1,4 @@
-package page
+package index
 
 type Page struct {
 	pageID int
