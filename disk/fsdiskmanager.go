@@ -85,3 +85,15 @@ func (dm *FSDiskManager) writePageBytes(bytes []byte, pageID int) {
 		panic(err)
 	}
 }
+
+// GetNextFreePageID page是从0开始的
+func (dm *FSDiskManager) GetNextFreePageID() int {
+	info, err := dm.file.Stat()
+	if err != nil {
+		panic(err)
+	}
+	if info.Size()%int64(page.PageSize) != 0 {
+		panic("Illegal DB File (Illegal Size)")
+	}
+	return int(info.Size() / int64(page.PageSize))
+}

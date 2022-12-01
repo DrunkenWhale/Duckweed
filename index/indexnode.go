@@ -19,7 +19,11 @@ import (
 // 哦对了 理论上来说 keys实际上要比children小1
 // 我们还得写一个numLessThan
 
-const FillFactor = 0.75
+const (
+	FillFactor      = 0.75
+	indexHeaderSize = 17
+	maxKeysNumber   = ((page.PageSize - indexHeaderSize) / 2 * 8) - 3
+)
 
 type IndexNode struct {
 	bf          buffer.BufferPool
@@ -27,6 +31,49 @@ type IndexNode struct {
 	page        *page.Page
 	keys        []int // 键后续可能会扩展(多种类型) 但我要想先做个int的试试
 	children    []int
+}
+
+func NewIndexNode(bf buffer.BufferPool, keys []int, children []int) *IndexNode {
+	return &IndexNode{
+		bf:          bf,
+		maxKVNumber: maxKeysNumber,
+		page:        bf.FetchNewPage(),
+		keys:        keys,
+		children:    children,
+	}
+}
+
+func (node *IndexNode) IsLeafNode() bool {
+	return false
+}
+
+func (node *IndexNode) IsIndexNode() bool {
+	return true
+}
+
+func (node *IndexNode) Put(key int, value []byte) (int, int, bool) {
+	index := node.numLessThanEqual(key)
+	childNode := node.FetchNode(node.children[index])
+	newNodePageID, splitKey, isSplit := childNode.Put(key, value)
+	if isSplit {
+		// 如果子节点分裂了
+		node.keys = insertSliceWithIndex(node.keys, index, splitKey)
+		node.children = insertSliceWithIndex(node.children, index+1, newNodePageID)
+		if node.shouldSplit() {
+			// 数量过多 需要进行分裂
+			midIndex := len(node.keys) / 2
+			returnKey := node.keys[midIndex]
+			newKeys := node.keys[midIndex+1:]
+			newChildren := node.children[midIndex:]
+			splitNode := NewIndexNode(node.bf, newKeys, newChildren)
+			node.keys = node.keys[:midIndex]
+			node.children = node.children[:midIndex]
+			splitNode.sync()
+			node.sync()
+			return splitNode.page.GetPageID(), returnKey, true
+		}
+	}
+	return -1, -1, false
 }
 
 func (node *IndexNode) FetchNode(pageID int) BPlusNode {
@@ -68,7 +115,11 @@ func (node *IndexNode) ToBytes() []byte {
 }
 
 func (node *IndexNode) shouldSplit() bool {
-	return node.maxKVNumber >= int(FillFactor*float64(len(node.keys)))
+	return len(node.keys) >= int(FillFactor*float64(node.maxKVNumber))
+}
+
+func (node *IndexNode) splitKeys() bool {
+	return len(node.keys) >= int(FillFactor*float64(node.maxKVNumber))
 }
 
 // 同步这个节点的数据到缓存上的页面上
@@ -80,32 +131,8 @@ func (node *IndexNode) sync() {
 }
 
 // 返回可能包含num的子节点的下标
-func (node *IndexNode) numLessThan(num int) int {
-	return numLessThan(node.keys, num)
-}
-
-func numLessThan(arr []int, num int) int {
-	if arr[0] > num {
-		return 0
-	}
-	if arr[len(arr)-1] < num {
-		return len(arr)
-	}
-	return upperBoundSearch(arr, num)
-}
-
-func upperBoundSearch(arr []int, num int) int {
-	i := 0
-	j := len(arr) - 1
-	for i <= j {
-		mid := (i + j) >> 1
-		if arr[mid] > num {
-			j = mid - 1
-		} else {
-			i = mid + 1
-		}
-	}
-	return i
+func (node *IndexNode) numLessThanEqual(num int) int {
+	return numLessThanEqual(node.keys, num)
 }
 
 // IndexNodeFromPage

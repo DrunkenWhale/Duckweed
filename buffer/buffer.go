@@ -16,6 +16,8 @@ type BufferPool interface {
 	PutPage(page *page.Page)
 	// Flush all dirty index to disk
 	Flush()
+
+	FetchNewPage() *page.Page
 	//// Pin 固定一个页面 防止其释放
 	//Pin(pageID int)
 	//// UnPin 放开一个页面捏

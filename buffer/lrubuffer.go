@@ -7,19 +7,28 @@ import (
 )
 
 type LRUBufferPool struct {
-	pageNumber int
-	pool       map[int]*page.Page
-	lru2q      *lru.LRU2Q
-	disk       disk.DiskManager
+	nextFreePageID int
+	pageNumber     int
+	pool           map[int]*page.Page
+	lru2q          *lru.LRU2Q
+	disk           disk.DiskManager
+}
+
+func (bf *LRUBufferPool) FetchNewPage() *page.Page {
+	p := page.NewPage(bf.nextFreePageID, make([]byte, 0))
+	bf.nextFreePageID++
+	return p
 }
 
 func NewLRUBufferPool() *LRUBufferPool {
-	return &LRUBufferPool{
+	bf := &LRUBufferPool{
 		pageNumber: MaxPageNumber,
 		pool:       make(map[int]*page.Page),
 		lru2q:      lru.NewLRU2Q(MaxPageNumber/4*3, MaxPageNumber/4),
 		disk:       disk.NewFSDiskManager(),
 	}
+	bf.nextFreePageID = bf.disk.GetNextFreePageID()
+	return bf
 }
 
 func (bf *LRUBufferPool) PutPage(page *page.Page) {

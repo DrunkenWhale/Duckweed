@@ -26,6 +26,19 @@ type LeafNode struct {
 	rightSibling int
 }
 
+func (node *LeafNode) IsLeafNode() bool {
+	return true
+}
+
+func (node *LeafNode) IsIndexNode() bool {
+	return false
+}
+
+func (node *LeafNode) Put(key int, value []byte) (int, int, bool) {
+	//TODO implement me
+	panic("implement me")
+}
+
 func (node *LeafNode) GetPage() *page.Page {
 	return node.page
 }
