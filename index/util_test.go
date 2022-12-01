@@ -22,3 +22,12 @@ func TestInsertSliceWithIndex(t *testing.T) {
 	assert.Equal(t, len(arr), 6)
 	assert.Equal(t, arr[3], 7)
 }
+
+func TestUpperBoundSearch(t *testing.T) {
+	arr := []int{1, 3, 7, 10, 17}
+	assert.Equal(t, upperBoundSearch(arr, -1), 0)
+	assert.Equal(t, upperBoundSearch(arr, 1), 1)
+	assert.Equal(t, upperBoundSearch(arr, 3), 2)
+	assert.Equal(t, upperBoundSearch(arr, 15), 4)
+	assert.Equal(t, upperBoundSearch(arr, 19), 5)
+}

@@ -23,6 +23,8 @@ type BPlusNode interface {
 	// int:  分裂后的Key
 	// bool: 子节点是否分裂 分裂为True 未分裂为False
 	Put(key int, value []byte) (int, int, bool)
+	// 将节点内容同步到缓冲池中的对应页
+	sync()
 }
 
 func FromPage(page *page.Page, bf buffer.BufferPool) BPlusNode {
@@ -37,6 +39,7 @@ func FromPage(page *page.Page, bf buffer.BufferPool) BPlusNode {
 }
 
 const (
+	FillFactor    = 0.75
 	IndexNodeFlag = iota + 1
 	LeafNodeFlag
 )

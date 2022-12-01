@@ -20,9 +20,8 @@ import (
 // 我们还得写一个numLessThan
 
 const (
-	FillFactor      = 0.75
-	indexHeaderSize = 17
-	maxKeysNumber   = ((page.PageSize - indexHeaderSize) / 2 * 8) - 3
+	indexHeaderSize         = 17
+	_maxIndexNodeKeysNumber = ((page.PageSize - indexHeaderSize) / (2 * 8)) - 3
 )
 
 type IndexNode struct {
@@ -36,7 +35,7 @@ type IndexNode struct {
 func NewIndexNode(bf buffer.BufferPool, keys []int, children []int) *IndexNode {
 	return &IndexNode{
 		bf:          bf,
-		maxKVNumber: maxKeysNumber,
+		maxKVNumber: _maxIndexNodeKeysNumber,
 		page:        bf.FetchNewPage(),
 		keys:        keys,
 		children:    children,
@@ -115,10 +114,6 @@ func (node *IndexNode) ToBytes() []byte {
 }
 
 func (node *IndexNode) shouldSplit() bool {
-	return len(node.keys) >= int(FillFactor*float64(node.maxKVNumber))
-}
-
-func (node *IndexNode) splitKeys() bool {
 	return len(node.keys) >= int(FillFactor*float64(node.maxKVNumber))
 }
 

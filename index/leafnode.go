@@ -6,6 +6,10 @@ import (
 	"Duckweed/page"
 )
 
+const (
+	leafHeaderSize = 1 + 4*8
+)
+
 // leaf node in disk
 //
 //
@@ -20,10 +24,22 @@ type LeafNode struct {
 	bf           buffer.BufferPool
 	maxKVNumber  int
 	ridLength    int
+	rightSibling int
 	page         *page.Page
 	keys         []int // 键后续可能会扩展(多种类型) 但我要想先做个int的试试
 	rids         [][]byte
-	rightSibling int
+}
+
+func NewLeafNode(bf buffer.BufferPool, ridLength, rightSibling int, keys []int, rids [][]byte) *LeafNode {
+	return &LeafNode{
+		bf:           bf,
+		maxKVNumber:  ((page.PageSize - leafHeaderSize) / (8 - rightSibling)) - 3,
+		ridLength:    ridLength,
+		rightSibling: rightSibling,
+		page:         bf.FetchNewPage(),
+		keys:         keys,
+		rids:         rids,
+	}
 }
 
 func (node *LeafNode) IsLeafNode() bool {
@@ -35,8 +51,38 @@ func (node *LeafNode) IsIndexNode() bool {
 }
 
 func (node *LeafNode) Put(key int, value []byte) (int, int, bool) {
-	//TODO implement me
-	panic("implement me")
+	index := upperBoundSearch(node.keys, key)
+	if index != 0 && node.keys[index-1] == key {
+		// 键重复了 只要更新即可
+		node.rids[index-1] = value
+		node.sync()
+		return -1, -1, false
+	}
+	node.keys = insertSliceWithIndex(node.keys, index, key)
+	node.rids = insertSliceWithIndex(node.rids, index, value)
+	if node.shouldSplit() {
+		// 需要分裂
+		midIndex := len(node.keys) / 2
+		newLeafNode := NewLeafNode(node.bf, node.ridLength, node.rightSibling, node.keys[:midIndex], node.rids[:midIndex])
+		node.keys = node.keys[midIndex:]
+		node.rids = node.rids[midIndex:]
+		node.rightSibling = newLeafNode.GetPage().GetPageID()
+		newLeafNode.sync()
+		node.sync()
+		return newLeafNode.GetPage().GetPageID(), newLeafNode.keys[0], true
+	}
+	// 不需要分裂
+	// 同步完刷回去就好
+	node.sync()
+	return -1, -1, false
+}
+
+func (node *LeafNode) shouldSplit() bool {
+	return len(node.keys) >= int(FillFactor*float64(node.maxKVNumber))
+}
+
+func (node *LeafNode) sync() {
+	node.page.WriteBytes(node.ToBytes())
 }
 
 func (node *LeafNode) GetPage() *page.Page {
@@ -93,7 +139,7 @@ func LeafNodeFromPage(p *page.Page, bf buffer.BufferPool) *LeafNode {
 	copy(kvNumberBytes[:], bytes[17:25])
 	kvNumber := int(databox.BytesToInt(kvNumberBytes))
 	ridLengthBytes := [8]byte{}
-	copy(ridLengthBytes[:], bytes[9:17])
+	copy(ridLengthBytes[:], bytes[25:33])
 	ridLength := int(databox.BytesToInt(ridLengthBytes))
 
 	headerOffset := 4*8 + 1
