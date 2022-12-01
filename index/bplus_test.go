@@ -24,7 +24,7 @@ func TestBPlus(t *testing.T) {
 		children:    children,
 	}
 	node.sync()
-	node = FromPage(node.page).(*IndexNode)
+	node = FromPage(node.page, pool).(*IndexNode)
 	assert.Equal(t, node.keys, keys)
 	assert.Equal(t, node.children, children)
 }
