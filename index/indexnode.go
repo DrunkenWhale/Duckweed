@@ -9,8 +9,8 @@ import (
 // index node in disk
 //
 //
-// 	 	  1 byte      8 byte	   8 byte
-// |head|IsLeafNode|maxKeysNumber|keyNumber|
+// 	 	   1 byte      8 byte	   8 byte
+// |head|IsIndexNode|maxKeysNumber|keyNumber|
 // |body|slot(int)|key|key|key...|=>
 //			*****
 // 		  <=|children(int)|children(int)|
@@ -31,7 +31,7 @@ type IndexNode struct {
 
 func (node *IndexNode) FetchNode(pageID int) BPlusNode {
 	p := node.bf.GetPage(pageID)
-	n := FromPage(p)
+	n := FromPage(p, node.bf)
 	return n
 }
 
@@ -81,7 +81,7 @@ func (node *IndexNode) sync() {
 
 // IndexNodeFromPage
 // TODO: Test
-func IndexNodeFromPage(p *page.Page) *IndexNode {
+func IndexNodeFromPage(p *page.Page, bf buffer.BufferPool) *IndexNode {
 	bytes := p.GetBytes()
 	maxKeysNumberBytes := [8]byte{}
 	copy(maxKeysNumberBytes[:], bytes[1:9])
@@ -106,6 +106,7 @@ func IndexNodeFromPage(p *page.Page) *IndexNode {
 		children[i] = int(num)
 	}
 	node := &IndexNode{
+		bf:          bf,
 		maxKVNumber: int(maxKeysNumber),
 		page:        p,
 		keys:        keys,

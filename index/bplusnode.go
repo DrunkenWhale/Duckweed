@@ -1,6 +1,9 @@
 package index
 
-import "Duckweed/page"
+import (
+	"Duckweed/buffer"
+	"Duckweed/page"
+)
 
 type BPlusNode interface {
 	ToBytes() []byte
@@ -10,12 +13,12 @@ type BPlusNode interface {
 	FetchNode(pageID int) BPlusNode
 }
 
-func FromPage(page *page.Page) BPlusNode {
+func FromPage(page *page.Page, bf buffer.BufferPool) BPlusNode {
 	flag := page.GetBytes()[0]
 	if flag == IndexNodeFlag {
-		return IndexNodeFromPage(page)
+		return IndexNodeFromPage(page, bf)
 	} else if flag == LeafNodeFlag {
-		return LeafNodeFromPage(page)
+		return LeafNodeFromPage(page, bf)
 	} else {
 		panic("Illegal Page!")
 	}
