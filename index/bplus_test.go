@@ -5,7 +5,9 @@ import (
 	"Duckweed/databox"
 	"Duckweed/page"
 	"github.com/go-playground/assert/v2"
+	"math/rand"
 	"testing"
+	"time"
 )
 
 func TestBPlus(t *testing.T) {
@@ -31,9 +33,10 @@ func TestBPlus(t *testing.T) {
 }
 
 func TestBPlusTree_Put(t *testing.T) {
-	tree := NewBPlusTree(9)
-	for i := 0; i < 1919810; i++ {
-		bytes := databox.IntToBytes(int64(i))
+	tree := NewBPlusTree(8)
+	rand.Seed(time.Now().Unix())
+	for i := 0; i < 114514; i++ {
+		bytes := databox.IntToBytes(int64(rand.Int()))
 		tree.Put(i, bytes[:])
 	}
 	tree.bf.Flush()

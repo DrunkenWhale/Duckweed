@@ -37,6 +37,10 @@ func (bf *LRUBufferPool) PutPage(page *page.Page) {
 	bf.pool[page.GetPageID()] = page
 }
 
+// GetPage
+// 当某个页面非法的时候 会返回nil
+// 即 不是从磁盘中读取
+// 或是不从buffer pool中获取的page
 func (bf *LRUBufferPool) GetPage(pageID int) *page.Page {
 	if bf.disk.GetNextFreePageID() <= pageID {
 		// 该页还没进磁盘
