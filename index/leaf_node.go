@@ -52,16 +52,11 @@ func (node *LeafNode) IsIndexNode() bool {
 
 func (node *LeafNode) Put(key int, value []byte) (int, int, bool) {
 	index := numLessThanEqual(node.keys, key)
-	//for i := 0; i < len(node.keys); i++ {
-	//	if node.keys[i]==key {
-	//		println(1)
-	//	}
-	//}
-	if len(node.keys) != 0 && index != 0 && node.keys[index-1] == key {
-		// 先不更新吧 debug结束后再说
-		// 键重复了 只要更新即可
-		//node.rids[index-1] = value
-		//node.sync()
+	if len(node.keys) != 0 && // ==0的时候key不会重复
+		index != 0 && // 如果下标志为0 那么它比第一个元素更小 所以也没问题
+		node.keys[index-1] == key { // 如果和上一个值一样大 那么它就无须重新插入
+		node.rids[index-1] = value
+		node.sync()
 		return -1, -1, false
 	}
 	node.keys = insertSliceWithIndex(node.keys, index, key)

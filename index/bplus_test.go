@@ -32,14 +32,21 @@ func TestBPlus(t *testing.T) {
 	assert.Equal(t, node.children, children)
 }
 
-func TestBPlusTree_Put(t *testing.T) {
-	tree := NewBPlusTree(8)
+func TestBPlusTree_Put1(t *testing.T) {
+	tree := NewBPlusTree(9)
 	rand.Seed(time.Now().Unix())
 	for i := 0; i < 114514; i++ {
 		bytes := databox.IntToBytes(int64(rand.Int()))
-		if i == 1983 {
-			println()
-		}
+		tree.Put(i, bytes[:])
+	}
+	tree.bf.Flush()
+}
+
+func TestBPlusTree_Put2(t *testing.T) {
+	tree := NewBPlusTree(8)
+	rand.Seed(time.Now().Unix())
+	for i, v := range rand.Perm(114514) {
+		bytes := databox.IntToBytes(int64(v))
 		tree.Put(i, bytes[:])
 	}
 	tree.bf.Flush()

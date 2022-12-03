@@ -39,7 +39,7 @@ func FromPage(page *page.Page, bf buffer.BufferPool) BPlusNode {
 }
 
 const (
-	FillFactor    = 0.25
+	FillFactor    = 0.75
 	IndexNodeFlag = iota + 1
 	LeafNodeFlag
 )
