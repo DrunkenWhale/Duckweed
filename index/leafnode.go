@@ -33,7 +33,7 @@ type LeafNode struct {
 func NewLeafNode(bf buffer.BufferPool, ridLength, rightSibling int, keys []int, rids [][]byte) *LeafNode {
 	return &LeafNode{
 		bf:           bf,
-		maxKVNumber:  ((page.PageSize - leafHeaderSize) / (8 - rightSibling)) - 3,
+		maxKVNumber:  ((page.PageSize - leafHeaderSize) / (8 + ridLength)) - 3,
 		ridLength:    ridLength,
 		rightSibling: rightSibling,
 		page:         bf.FetchNewPage(),
@@ -63,9 +63,9 @@ func (node *LeafNode) Put(key int, value []byte) (int, int, bool) {
 	if node.shouldSplit() {
 		// 需要分裂
 		midIndex := len(node.keys) / 2
-		newLeafNode := NewLeafNode(node.bf, node.ridLength, node.rightSibling, node.keys[:midIndex], node.rids[:midIndex])
-		node.keys = node.keys[midIndex:]
-		node.rids = node.rids[midIndex:]
+		newLeafNode := NewLeafNode(node.bf, node.ridLength, node.rightSibling, node.keys[midIndex:], node.rids[midIndex:])
+		node.keys = node.keys[:midIndex]
+		node.rids = node.rids[:midIndex]
 		node.rightSibling = newLeafNode.GetPage().GetPageID()
 		newLeafNode.sync()
 		node.sync()

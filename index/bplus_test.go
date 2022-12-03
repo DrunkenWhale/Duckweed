@@ -2,6 +2,7 @@ package index
 
 import (
 	"Duckweed/buffer"
+	"Duckweed/databox"
 	"Duckweed/page"
 	"github.com/go-playground/assert/v2"
 	"testing"
@@ -27,4 +28,13 @@ func TestBPlus(t *testing.T) {
 	node = FromPage(node.page, pool).(*IndexNode)
 	assert.Equal(t, node.keys, keys)
 	assert.Equal(t, node.children, children)
+}
+
+func TestBPlusTree_Put(t *testing.T) {
+	tree := NewBPlusTree(9)
+	for i := 0; i < 1919810; i++ {
+		bytes := databox.IntToBytes(int64(i))
+		tree.Put(i, bytes[:])
+	}
+	tree.bf.Flush()
 }

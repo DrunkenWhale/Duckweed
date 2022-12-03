@@ -16,6 +16,7 @@ type LRUBufferPool struct {
 
 func (bf *LRUBufferPool) FetchNewPage() *page.Page {
 	p := page.NewPage(bf.nextFreePageID, make([]byte, 0))
+	bf.pool[p.GetPageID()] = p
 	bf.nextFreePageID++
 	return p
 }
@@ -37,6 +38,15 @@ func (bf *LRUBufferPool) PutPage(page *page.Page) {
 }
 
 func (bf *LRUBufferPool) GetPage(pageID int) *page.Page {
+	if bf.disk.GetNextFreePageID() <= pageID {
+		// 该页还没进磁盘
+		_, flag := bf.pool[pageID]
+		if !flag {
+			// 如果它也不存在于内存
+			// 那么这是一个未被分配的非法页
+			return nil
+		}
+	}
 	// 先走LRU
 	// 更新置换策略
 	if out := bf.lru2q.Push(pageID); out != -1 {
@@ -50,7 +60,7 @@ func (bf *LRUBufferPool) GetPage(pageID int) *page.Page {
 		// 把页刷到磁盘上
 		bf.disk.Write(p)
 		// 释放空间
-		delete(bf.pool, pageID)
+		delete(bf.pool, p.GetPageID())
 	}
 	p, flag := bf.pool[pageID]
 	if flag {

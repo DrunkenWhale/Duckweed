@@ -63,10 +63,10 @@ func (node *IndexNode) Put(key int, value []byte) (int, int, bool) {
 			midIndex := len(node.keys) / 2
 			returnKey := node.keys[midIndex]
 			newKeys := node.keys[midIndex+1:]
-			newChildren := node.children[midIndex:]
+			newChildren := node.children[midIndex+1:]
 			splitNode := NewIndexNode(node.bf, newKeys, newChildren)
 			node.keys = node.keys[:midIndex]
-			node.children = node.children[:midIndex]
+			node.children = node.children[:midIndex+1]
 			splitNode.sync()
 			node.sync()
 			return splitNode.page.GetPageID(), returnKey, true
