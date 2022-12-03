@@ -37,6 +37,9 @@ func TestBPlusTree_Put(t *testing.T) {
 	rand.Seed(time.Now().Unix())
 	for i := 0; i < 114514; i++ {
 		bytes := databox.IntToBytes(int64(rand.Int()))
+		if i == 1983 {
+			println()
+		}
 		tree.Put(i, bytes[:])
 	}
 	tree.bf.Flush()

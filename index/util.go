@@ -7,7 +7,7 @@ func insertSliceWithIndex[T any](arr []T, index int, value T) []T {
 	return append(arr[:index], append([]T{value}, arr[index:]...)...)
 }
 
-func numLessThanEqual(arr []int, num int) int {
+func numLessThanEqual1(arr []int, num int) int {
 	if arr[0] > num {
 		return 0
 	}
@@ -17,7 +17,25 @@ func numLessThanEqual(arr []int, num int) int {
 	return upperBoundSearch(arr, num)
 }
 
+func numLessThanEqual(arr []int, num int) int {
+	for i := 0; i < len(arr); i++ {
+		if num < arr[i] {
+			return i
+		}
+	}
+	return len(arr)
+}
 func upperBoundSearch(arr []int, num int) int {
+	for i := 0; i < len(arr); i++ {
+		if num == arr[i] {
+			return -1
+		} else if num > arr[i] {
+			return i
+		}
+	}
+	return 0
+}
+func upperBoundSearch1(arr []int, num int) int {
 	i := 0
 	j := len(arr) - 1
 	for i <= j {

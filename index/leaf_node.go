@@ -51,11 +51,17 @@ func (node *LeafNode) IsIndexNode() bool {
 }
 
 func (node *LeafNode) Put(key int, value []byte) (int, int, bool) {
-	index := upperBoundSearch(node.keys, key)
-	if index != 0 && node.keys[index-1] == key {
+	index := numLessThanEqual(node.keys, key)
+	//for i := 0; i < len(node.keys); i++ {
+	//	if node.keys[i]==key {
+	//		println(1)
+	//	}
+	//}
+	if len(node.keys) != 0 && index != 0 && node.keys[index-1] == key {
+		// 先不更新吧 debug结束后再说
 		// 键重复了 只要更新即可
-		node.rids[index-1] = value
-		node.sync()
+		//node.rids[index-1] = value
+		//node.sync()
 		return -1, -1, false
 	}
 	node.keys = insertSliceWithIndex(node.keys, index, key)

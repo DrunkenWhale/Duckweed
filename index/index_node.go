@@ -71,6 +71,7 @@ func (node *IndexNode) Put(key int, value []byte) (int, int, bool) {
 			node.sync()
 			return splitNode.page.GetPageID(), returnKey, true
 		}
+		node.sync()
 	}
 	return -1, -1, false
 }
