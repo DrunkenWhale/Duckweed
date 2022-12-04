@@ -4,12 +4,12 @@ __我想做一个基于磁盘的数据库嘛__
 
 ## TODO
 
-- [ ] Disk Manager
-- [ ] Buffer Pool
+- [x] Disk Manager
+- [x] Buffer Pool
     - [x] LRU
 - [ ] BPlusTree
-    - [ ] node factory method
-    - [ ] node put method // do not need to balance
-- [ ] Page
+    - [x] node factory method
+    - [x] node put method // do not need to balance
+- [x] Page
 - [ ] Transaction
 - [ ] Database
