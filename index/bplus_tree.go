@@ -12,8 +12,6 @@ type BPlusTree struct {
 	ridLength int
 }
 
-// TODO 确保磁盘上有数据时 能够找到正确的根节点
-
 func NewBPlusTree(ridLength int) *BPlusTree {
 	bf := buffer.NewLRUBufferPool()
 	tree := &BPlusTree{

@@ -128,7 +128,7 @@ func (node *IndexNode) sync() {
 
 // 返回可能包含num的子节点的下标
 func (node *IndexNode) numLessThanEqual(num int) int {
-	return numLessThanEqual(node.keys, num)
+	return numLessThan(node.keys, num)
 }
 
 // IndexNodeFromPage

@@ -4,6 +4,7 @@ import (
 	"Duckweed/buffer"
 	"Duckweed/databox"
 	"Duckweed/page"
+	"bytes"
 )
 
 const (
@@ -51,10 +52,15 @@ func (node *LeafNode) IsIndexNode() bool {
 }
 
 func (node *LeafNode) Put(key int, value []byte) (int, int, bool) {
-	index := numLessThanEqual(node.keys, key)
-	if len(node.keys) != 0 && // ==0的时候key不会重复
+	index := numLessThan(node.keys, key)
+	if len(node.keys) != 0 && // length == 0的时候key不会重复
 		index != 0 && // 如果下标志为0 那么它比第一个元素更小 所以也没问题
 		node.keys[index-1] == key { // 如果和上一个值一样大 那么它就无须重新插入
+		if bytes.Compare(value, node.rids[index-1]) == 0 {
+			// 如果值也没变
+			// 没必要再刷一遍
+			return -1, -1, false
+		}
 		node.rids[index-1] = value
 		node.sync()
 		return -1, -1, false
@@ -122,10 +128,10 @@ func (node *LeafNode) ToBytes() []byte {
 	}
 	blankBytesSize := page.PageSize - (len(header) + len(keysBytes) + len(ridsBytes))
 	blankBytes := make([]byte, blankBytesSize)
-	bytes := append(header, keysBytes...)
-	bytes = append(bytes, blankBytes...)
-	bytes = append(bytes, ridsBytes...)
-	return bytes
+	b := append(header, keysBytes...)
+	b = append(b, blankBytes...)
+	b = append(b, ridsBytes...)
+	return b
 }
 
 func LeafNodeFromPage(p *page.Page, bf buffer.BufferPool) *LeafNode {
