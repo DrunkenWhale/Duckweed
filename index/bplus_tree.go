@@ -22,6 +22,9 @@ func NewBPlusTree(ridLength int) *BPlusTree {
 	tree.init()
 	return tree
 }
+func (tree *BPlusTree) Get(key int) ([]byte, bool) {
+	return tree.root.Get(key)
+}
 
 func (tree *BPlusTree) Put(key int, bytes []byte) {
 	newNodeID, splitKey, isSplit := tree.root.Put(key, bytes)

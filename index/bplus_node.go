@@ -23,6 +23,12 @@ type BPlusNode interface {
 	// int:  分裂后的Key
 	// bool: 子节点是否分裂 分裂为True 未分裂为False
 	Put(key int, value []byte) (int, int, bool)
+
+	// Get
+	// @return
+	// []byte: 值, 下面的bool值为false时 这个值是空的
+	// bool  : 是否查找到该key
+	Get(key int) ([]byte, bool)
 	// 将节点内容同步到缓冲池中的对应页
 	sync()
 }

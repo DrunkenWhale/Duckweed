@@ -50,8 +50,14 @@ func (node *IndexNode) IsIndexNode() bool {
 	return true
 }
 
+func (node *IndexNode) Get(key int) ([]byte, bool) {
+	index := node.numLessThan(key)
+	childNode := node.FetchNode(node.children[index])
+	return childNode.Get(key)
+}
+
 func (node *IndexNode) Put(key int, value []byte) (int, int, bool) {
-	index := node.numLessThanEqual(key)
+	index := node.numLessThan(key)
 	childNode := node.FetchNode(node.children[index])
 	newNodePageID, splitKey, isSplit := childNode.Put(key, value)
 	if isSplit {
@@ -127,12 +133,12 @@ func (node *IndexNode) sync() {
 }
 
 // 返回可能包含num的子节点的下标
-func (node *IndexNode) numLessThanEqual(num int) int {
+func (node *IndexNode) numLessThan(num int) int {
 	return numLessThan(node.keys, num)
 }
 
 // IndexNodeFromPage
-// TODO: Test
+// 从page中构建index node
 func IndexNodeFromPage(p *page.Page, bf buffer.BufferPool) *IndexNode {
 	bytes := p.GetBytes()
 	maxKeysNumberBytes := [8]byte{}

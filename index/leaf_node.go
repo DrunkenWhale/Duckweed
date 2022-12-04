@@ -51,6 +51,26 @@ func (node *LeafNode) IsIndexNode() bool {
 	return false
 }
 
+func (node *LeafNode) Get(key int) ([]byte, bool) {
+	index := numLessThan(node.keys, key)
+	if len(node.keys) == 0 {
+		// 值不存在
+		return nil, false
+	}
+	if index == 0 {
+		// key小于第一个元素
+		// 不可能有匹配
+		return nil, false
+	}
+	if node.keys[index-1] == key {
+		// 键匹配
+		// 返回对应值
+		return node.rids[index-1], true
+	}
+	// 键不匹配 返回空
+	return nil, false
+}
+
 func (node *LeafNode) Put(key int, value []byte) (int, int, bool) {
 	index := numLessThan(node.keys, key)
 	if len(node.keys) != 0 && // length == 0的时候key不会重复
