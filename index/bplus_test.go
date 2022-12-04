@@ -51,3 +51,19 @@ func TestBPlusTree_Put2(t *testing.T) {
 	}
 	tree.bf.Flush()
 }
+
+func TestBPlusTree_Get(t *testing.T) {
+	tree := NewBPlusTree(8)
+	rand.Seed(time.Now().Unix())
+	for _, v := range rand.Perm(114514) {
+		bytes := databox.IntToBytes(int64(v))
+		tree.Put(v, bytes[:])
+	}
+	tree.bf.Flush()
+	for _, v := range rand.Perm(114514) {
+		bytes := databox.IntToBytes(int64(v))
+		b, f := tree.Get(v)
+		assert.Equal(t, f, true)
+		assert.Equal(t, b, bytes[:])
+	}
+}
