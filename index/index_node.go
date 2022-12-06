@@ -42,6 +42,16 @@ func NewIndexNode(bf buffer.BufferPool, keys []int, children []int) *IndexNode {
 	}
 }
 
+func (node *IndexNode) getLeftmostNodeID() int {
+	// 因为不打算释放空间 所以索引是不会自己掉的
+	// 这里应当不会越界
+	// 你要是初始化当我没说
+	// 但是要是能访问到这里 说明已经分裂过了不是吗
+	// 所以还是不会越界
+	child := FromPage(node.bf.GetPage(node.children[0]), node.bf)
+	return child.getLeftmostNodeID()
+}
+
 func (node *IndexNode) IsLeafNode() bool {
 	return false
 }

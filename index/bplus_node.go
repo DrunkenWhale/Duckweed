@@ -30,6 +30,10 @@ type BPlusNode interface {
 	// bool  : 是否查找到该key
 	Get(key int) ([]byte, bool)
 	// 将节点内容同步到缓冲池中的对应页
+
+	// 获取子节点中最右边的那个的ID
+	getLeftmostNodeID() int
+
 	sync()
 }
 

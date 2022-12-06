@@ -43,6 +43,10 @@ func NewLeafNode(bf buffer.BufferPool, ridLength, rightSibling int, keys []int, 
 	}
 }
 
+func (node *LeafNode) getLeftmostNodeID() int {
+	return node.page.GetPageID()
+}
+
 func (node *LeafNode) IsLeafNode() bool {
 	return true
 }
