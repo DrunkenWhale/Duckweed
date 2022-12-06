@@ -22,6 +22,9 @@ type BPlusNode interface {
 	// int:  分裂后的新的节点的page ID 只有在bool值为True时才应当加入children和key中
 	// int:  分裂后的Key
 	// bool: 子节点是否分裂 分裂为True 未分裂为False
+	// 关于key重复是覆盖而非报duplicate这件事
+	// 就当是我很懒吧
+	// 诶嘿(o゜▽゜)o☆
 	Put(key int, value []byte) (int, int, bool)
 
 	// Get
@@ -29,11 +32,14 @@ type BPlusNode interface {
 	// []byte: 值, 下面的bool值为false时 这个值是空的
 	// bool  : 是否查找到该key
 	Get(key int) ([]byte, bool)
-	// 将节点内容同步到缓冲池中的对应页
+
+	// @return 返回删除是否成功
+	Delete(key int) bool
 
 	// 获取子节点中最右边的那个的ID
 	getLeftmostNodeID() int
 
+	// 将节点内容同步到缓冲池中的对应页
 	sync()
 }
 

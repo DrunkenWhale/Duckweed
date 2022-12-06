@@ -43,6 +43,28 @@ func NewLeafNode(bf buffer.BufferPool, ridLength, rightSibling int, keys []int, 
 	}
 }
 
+func (node *LeafNode) Delete(key int) bool {
+	index := numLessThan(node.keys, key)
+	if len(node.keys) == 0 {
+		// 这种时候不可能删除成功的吧
+		return false
+	}
+	if index == 0 {
+		// 匹配不到这个值
+		// 它比keys数组中的第一个都要小
+		return false
+	}
+	if node.keys[index-1] == key {
+		// 成功匹配
+		node.keys = append(node.keys[:index-1], node.keys[index:]...)
+		node.rids = append(node.rids[:index-1], node.rids[index:]...)
+		node.sync()
+		return true
+	}
+	// 完全找不到了呗
+	return false
+}
+
 func (node *LeafNode) getLeftmostNodeID() int {
 	return node.page.GetPageID()
 }

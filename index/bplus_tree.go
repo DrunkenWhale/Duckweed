@@ -53,6 +53,17 @@ func (tree *BPlusTree) Scan() *Iter {
 	return NewIter(leftmostNodeID, tree.bf)
 }
 
+func (tree *BPlusTree) Update(key int, value []byte) {
+	if _, ok := tree.Get(key); ok {
+		// 键存在
+		tree.root.Put(key, value)
+	}
+}
+
+func (tree *BPlusTree) Delete(key int) {
+	tree.root.Delete(key)
+}
+
 func (tree *BPlusTree) init() {
 	p := tree.bf.GetPage(0)
 	var root BPlusNode

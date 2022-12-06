@@ -87,3 +87,41 @@ func TestBPlusTree_Scan(t *testing.T) {
 		assert.Equal(t, res, v)
 	}
 }
+
+func TestBPlusTree_Update(t *testing.T) {
+	tree := NewBPlusTree(8)
+	rand.Seed(time.Now().Unix())
+	for _, v := range rand.Perm(114514) {
+		bytes := databox.IntToBytes(int64(v))
+		tree.Put(v, bytes[:])
+	}
+	tree.bf.Flush()
+	for i, v := range rand.Perm(114514) {
+		bytes := databox.IntToBytes(int64(i))
+		tree.Update(v, bytes[:])
+		b, ok := tree.Get(v)
+		assert.Equal(t, true, ok)
+		assert.Equal(t, b, bytes[:])
+	}
+
+}
+
+func TestBPlusTree_Delete(t *testing.T) {
+	tree := NewBPlusTree(8)
+	rand.Seed(time.Now().Unix())
+	for _, v := range rand.Perm(114514) {
+		bytes := databox.IntToBytes(int64(v))
+		tree.Put(v, bytes[:])
+	}
+	tree.bf.Flush()
+	for _, v := range rand.Perm(114514) {
+		tree.Delete(v)
+	}
+	tree.bf.Flush()
+	for _, v := range rand.Perm(114514) {
+		b, ok := tree.Get(v)
+		assert.Equal(t, false, ok)
+		assert.Equal(t, b, nil)
+	}
+
+}

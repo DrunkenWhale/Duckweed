@@ -42,6 +42,12 @@ func NewIndexNode(bf buffer.BufferPool, keys []int, children []int) *IndexNode {
 	}
 }
 
+func (node *IndexNode) Delete(key int) bool {
+	index := node.numLessThan(key)
+	childNode := node.FetchNode(node.children[index])
+	return childNode.Delete(key)
+}
+
 func (node *IndexNode) getLeftmostNodeID() int {
 	// 因为不打算释放空间 所以索引是不会自己掉的
 	// 这里应当不会越界
