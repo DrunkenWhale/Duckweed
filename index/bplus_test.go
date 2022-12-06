@@ -11,7 +11,7 @@ import (
 )
 
 func TestBPlus(t *testing.T) {
-	pool := buffer.NewLRUBufferPool()
+	pool := buffer.NewLRUBufferPool("duckweed")
 	keys := make([]int, 2)
 	keys[0] = 1
 	keys[1] = 2

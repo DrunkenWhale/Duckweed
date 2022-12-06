@@ -21,21 +21,21 @@ func (bf *LRUBufferPool) FetchNewPage() *page.Page {
 	return p
 }
 
-func NewLRUBufferPool() *LRUBufferPool {
+func NewLRUBufferPool(name string) *LRUBufferPool {
 	bf := &LRUBufferPool{
 		pageNumber: MaxPageNumber,
 		pool:       make(map[int]*page.Page),
 		lru2q:      lru.NewLRU2Q(MaxPageNumber/4*3, MaxPageNumber/4),
-		disk:       disk.NewFSDiskManager(),
+		disk:       disk.NewFSDiskManager(name),
 	}
 	bf.nextFreePageID = bf.disk.GetNextFreePageID()
 	return bf
 }
 
-func (bf *LRUBufferPool) PutPage(page *page.Page) {
-	bf.lru2q.Push(page.GetPageID())
-	bf.pool[page.GetPageID()] = page
-}
+//func (bf *LRUBufferPool) PutPage(page *page.Page) {
+//	bf.lru2q.Push(page.GetPageID())
+//	bf.pool[page.GetPageID()] = page
+//}
 
 // GetPage
 // 当某个页面非法的时候 会返回nil

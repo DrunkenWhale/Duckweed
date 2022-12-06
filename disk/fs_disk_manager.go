@@ -8,19 +8,22 @@ import (
 
 const (
 	StoragePath = "data"
+	FileSuffix  = ".dued"
 )
 
 type FSDiskManager struct {
+	filename    string
 	pageSize    int
 	storagePath string
 	file        *os.File
 }
 
-func NewFSDiskManager() *FSDiskManager {
+func NewFSDiskManager(filename string) *FSDiskManager {
 	dm := &FSDiskManager{
 		pageSize:    page.PageSize,
 		storagePath: StoragePath,
 		file:        nil,
+		filename:    filename, // 创建的时候会创建成 /data/duckweed/duckweed这样的文件
 	}
 	dm.open()
 	return dm
@@ -44,15 +47,19 @@ func (dm *FSDiskManager) BatchWrite(pages []*page.Page) {
 }
 
 func (dm *FSDiskManager) open() {
+	storagePath := dm.storagePath + string(os.PathSeparator) + dm.filename
 	_, err := os.ReadDir(dm.storagePath)
 	if err != nil {
 		// 父目录不存在则递归创建
-		err := os.MkdirAll(dm.storagePath, fs.ModePerm)
+		err := os.MkdirAll(storagePath, fs.ModePerm)
 		if err != nil {
 			panic(err)
 		}
 	}
-	f, err := os.OpenFile(dm.storagePath+string(os.PathSeparator)+"duckweed", os.O_CREATE|os.O_RDWR, fs.ModePerm)
+	f, err := os.OpenFile(
+		storagePath+string(os.PathSeparator)+dm.filename+FileSuffix,
+		os.O_CREATE|os.O_RDWR,
+		fs.ModePerm)
 	if err != nil {
 		panic(err)
 	}

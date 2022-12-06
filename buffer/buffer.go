@@ -12,8 +12,9 @@ const (
 type BufferPool interface {
 	// GetPage from disk
 	GetPage(pageID int) *page.Page
-	// PutPage 向缓存池中加入页面
-	PutPage(page *page.Page)
+	//向缓存池中加入页面
+	//PutPage(page *page.Page)
+
 	// Flush all dirty index to disk
 	Flush()
 

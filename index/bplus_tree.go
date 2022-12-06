@@ -13,7 +13,7 @@ type BPlusTree struct {
 }
 
 func NewBPlusTree(ridLength int) *BPlusTree {
-	bf := buffer.NewLRUBufferPool()
+	bf := buffer.NewLRUBufferPool("duckweed")
 	tree := &BPlusTree{
 		bf:        bf,
 		root:      nil,
