@@ -146,6 +146,8 @@ func (node *IndexNode) shouldSplit() bool {
 // (前提是这个页是从缓存中拿取的)
 func (node *IndexNode) sync() {
 	node.page.WriteBytes(node.ToBytes())
+	// 设为脏页
+	node.page.Defile()
 }
 
 // 返回可能包含num的子节点的下标

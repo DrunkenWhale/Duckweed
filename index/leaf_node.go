@@ -136,6 +136,8 @@ func (node *LeafNode) shouldSplit() bool {
 
 func (node *LeafNode) sync() {
 	node.page.WriteBytes(node.ToBytes())
+	// 设为脏页
+	node.page.Defile()
 }
 
 func (node *LeafNode) GetPage() *page.Page {

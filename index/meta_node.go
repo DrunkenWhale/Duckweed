@@ -53,4 +53,6 @@ func (node *TreeMetaNode) ToBytes() []byte {
 // 同步刷盘
 func (node *TreeMetaNode) sync() {
 	node.page.WriteBytes(node.ToBytes())
+	// 设为脏页
+	node.page.Defile()
 }
