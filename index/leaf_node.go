@@ -14,8 +14,8 @@ const (
 // leaf node in disk
 //
 //
-// 	 	  1 byte      8 byte	   8 byte     8 byte   8 byte
-// |head|IsLeafNode|rightSibling|maxKVNumber|kvNumber|ridLength|
+// 	 	  1 byte    8 byte    8 byte      8 byte     8 byte   8 byte
+// |head|IsLeafNode|pageID|rightSibling|maxKVNumber|kvNumber|ridLength|
 // |body|slot(int)|key|key|key...|=>
 //							 *****
 // 		  			  <=|rid([]byte])|rid([]byte])|rid([]byte])|
@@ -156,10 +156,12 @@ func (node *LeafNode) ToBytes() []byte {
 	if len(node.keys) != len(node.rids) {
 		panic("Keys Number Should equal Rids Number (o゜▽゜)o☆")
 	}
+	pageIDBytes := databox.IntToBytes(int64(node.GetPage().GetPageID()))
 	rightSiblingBytes := databox.IntToBytes(int64(node.rightSibling))
 	maxKeysNumberBytes := databox.IntToBytes(int64(node.maxKVNumber))
 	keysNumberBytes := databox.IntToBytes(int64(len(node.keys)))
 	ridLengthBytes := databox.IntToBytes(int64(node.ridLength))
+	header = append(header, pageIDBytes[:]...)
 	header = append(header, rightSiblingBytes[:]...)
 	header = append(header, maxKeysNumberBytes[:]...)
 	header = append(header, keysNumberBytes[:]...)
@@ -183,34 +185,41 @@ func (node *LeafNode) ToBytes() []byte {
 }
 
 func LeafNodeFromPage(p *page.Page, bf buffer.BufferPool) *LeafNode {
-	bytes := p.GetBytes()
+	bs := p.GetBytes()
+	pageIDBytes := [8]byte{}
+	copy(pageIDBytes[:], bs[1:9])
+	pageID := int(databox.BytesToInt(pageIDBytes))
+	if pageID != p.GetPageID() {
+		panic("Illegal Page ID: " + string(pageIDBytes[:]))
+	}
+
 	rightSiblingBytes := [8]byte{}
-	copy(rightSiblingBytes[:], bytes[1:9])
+	copy(rightSiblingBytes[:], bs[9:17])
 	rightSibling := int(databox.BytesToInt(rightSiblingBytes))
 	maxKeysNumberBytes := [8]byte{}
-	copy(maxKeysNumberBytes[:], bytes[9:17])
+	copy(maxKeysNumberBytes[:], bs[17:25])
 	maxKeysNumber := int(databox.BytesToInt(maxKeysNumberBytes))
 	kvNumberBytes := [8]byte{}
-	copy(kvNumberBytes[:], bytes[17:25])
+	copy(kvNumberBytes[:], bs[25:33])
 	kvNumber := int(databox.BytesToInt(kvNumberBytes))
 	ridLengthBytes := [8]byte{}
-	copy(ridLengthBytes[:], bytes[25:33])
+	copy(ridLengthBytes[:], bs[33:41])
 	ridLength := int(databox.BytesToInt(ridLengthBytes))
 
-	headerOffset := 4*8 + 1
+	headerOffset := 5*8 + 1
 
 	keys := make([]int, kvNumber)
 	rids := make([][]byte, kvNumber)
 
 	for i := 0; i < kvNumber; i++ {
 		b := [8]byte{}
-		copy(b[:], bytes[headerOffset+i*8:headerOffset+(i+1)*8])
+		copy(b[:], bs[headerOffset+i*8:headerOffset+(i+1)*8])
 		num := databox.BytesToInt(b)
 		keys[i] = int(num)
 	}
 	for i := 0; i < kvNumber; i++ {
 		b := make([]byte, ridLength)
-		copy(b[:], bytes[page.PageSize-(i+1)*ridLength:page.PageSize-i*ridLength])
+		copy(b[:], bs[page.PageSize-(i+1)*ridLength:page.PageSize-i*ridLength])
 		rids[i] = b
 	}
 	node := &LeafNode{

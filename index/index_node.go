@@ -9,8 +9,8 @@ import (
 // index node in disk
 //
 //
-// 	 	   1 byte      8 byte	   8 byte
-// |head|IsIndexNode|maxKeysNumber|keyNumber|
+// 	 	   1 byte    8 byte   8 byte	   8 byte
+// |head|IsIndexNode|pageID|maxKeysNumber|keyNumber|
 // |body|slot(int)|key|key|key...|=>
 //			*****
 // 		  <=|children(int)|children(int)|
@@ -115,9 +115,12 @@ func (node *IndexNode) ToBytes() []byte {
 		// 数值不对啊
 		panic("Keys Should equal ChildrenNumber - 1 ╰(*°▽°*)╯ ")
 	}
+	pageIDBytes := databox.IntToBytes(int64(node.page.GetPageID()))
 	maxKeysNumberBytes := databox.IntToBytes(int64(node.maxKVNumber))
 	keysNumberBytes := databox.IntToBytes(int64(len(node.keys)))
-	header = append(header, append(maxKeysNumberBytes[:], keysNumberBytes[:]...)...)
+	header = append(header, pageIDBytes[:]...)
+	header = append(header, maxKeysNumberBytes[:]...)
+	header = append(header, keysNumberBytes[:]...)
 	keysBytes := make([]byte, 8*len(node.keys))
 	for i := 0; i < len(node.keys); i++ {
 		b := databox.IntToBytes(int64(node.keys[i]))
@@ -159,16 +162,22 @@ func (node *IndexNode) numLessThan(num int) int {
 // 从page中构建index node
 func IndexNodeFromPage(p *page.Page, bf buffer.BufferPool) *IndexNode {
 	bytes := p.GetBytes()
+	pageIDBytes := [8]byte{}
+	copy(pageIDBytes[:], bytes[1:9])
+	pageID := databox.BytesToInt(pageIDBytes)
+	if p.GetPageID() != int(pageID) {
+		panic("Illegal Page ID: " + string(pageIDBytes[:]))
+	}
 	maxKeysNumberBytes := [8]byte{}
-	copy(maxKeysNumberBytes[:], bytes[1:9])
+	copy(maxKeysNumberBytes[:], bytes[9:17])
 	maxKeysNumber := databox.BytesToInt(maxKeysNumberBytes)
 	keyNumberBytes := [8]byte{}
-	copy(keyNumberBytes[:], bytes[9:17])
+	copy(keyNumberBytes[:], bytes[17:25])
 	keyNumber := databox.BytesToInt(keyNumberBytes)
 	childrenNumber := keyNumber + 1
 	keys := make([]int, keyNumber)
 	children := make([]int, childrenNumber)
-	headerOffset := 2*8 + 1
+	headerOffset := 3*8 + 1
 	for i := 0; i < int(keyNumber); i++ {
 		b := [8]byte{}
 		copy(b[:], bytes[headerOffset+i*8:headerOffset+(i+1)*8])
