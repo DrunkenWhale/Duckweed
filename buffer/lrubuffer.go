@@ -98,3 +98,9 @@ func (bf *LRUBufferPool) Flush() {
 	bf.disk.BatchWrite(pages)
 	return
 }
+
+func (bf *LRUBufferPool) Clear() {
+	bf.pool = make(map[int]*page.Page)
+	bf.lru2q = lru.NewLRU2Q(MaxPageNumber/4*3, MaxPageNumber/4)
+	return
+}

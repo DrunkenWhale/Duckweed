@@ -3,6 +3,7 @@ package index
 import (
 	"Duckweed/buffer"
 	"Duckweed/disk"
+	"Duckweed/page"
 	"Duckweed/trans"
 )
 
@@ -85,13 +86,17 @@ func (tree *BPlusTree) Commit() {
 
 func (tree *BPlusTree) Rollback() {
 	tree.rc.Rollback()
+	tree.bf.Clear()
+	tree.root = nil
+	tree.init()
 }
 
 func (tree *BPlusTree) init() {
 	p := tree.bf.GetPage(0)
 	var root BPlusNode
+
 	if p == nil {
-		// pageID=0的页不存在且不合法
+		// pageID=0的页不存在且不合法 或是没有下一个节点
 		// 说明这棵树是空的
 		node := &TreeMetaNode{
 			rootPageID: 0,
@@ -105,10 +110,33 @@ func (tree *BPlusTree) init() {
 		root = NewLeafNode(tree.bf, tree.rc, tree.ridLength, -1, make([]int, 0), make([][]byte, 0))
 		node.setRootNodeIDAndSync(root.GetPage().GetPageID())
 	} else {
-		// 该页存在 是有效的
 		node := GetTreeMetaNode(tree.bf, tree.rc)
-		rootNodePage := tree.bf.GetPage(node.GetRootNodeID())
-		root = FromPage(rootNodePage, tree.bf, tree.rc)
+		// 树非空
+		if node.GetRootNodeID() != -1 {
+			rootNodePage := tree.bf.GetPage(node.GetRootNodeID())
+			root = FromPage(rootNodePage, tree.bf, tree.rc)
+		} else {
+			node := &TreeMetaNode{
+				rootPageID: 0,
+				bf:         tree.bf,
+				rc:         tree.rc,
+				page:       tree.bf.FetchNewPage(),
+			}
+			// 这边属于又双叒叕的抽象泄露了
+			// 由于page和page ID绑死了
+			// 这里会给出错误的page ID
+			// 得手动设置为0
+			// 哦 我知道你想问其他页
+			// 那些不需要
+			// 因为页中有存储真正的page ID
+			// 但是meta node page一定是在index=0的页中
+			// 所以需要区别对待
+			if node.page.GetPageID() != 0 {
+				node.page = page.NewPage(0, node.page.Copy().GetBytes())
+			}
+			root = NewLeafNode(tree.bf, tree.rc, tree.ridLength, -1, make([]int, 0), make([][]byte, 0))
+			node.setRootNodeIDAndSync(root.GetPage().GetPageID())
+		}
 	}
 	tree.root = root
 }

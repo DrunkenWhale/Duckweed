@@ -6,6 +6,7 @@ import (
 	"Duckweed/page"
 	"Duckweed/trans"
 	"bytes"
+	"strconv"
 )
 
 const (
@@ -145,12 +146,14 @@ func (node *LeafNode) shouldSplit() bool {
 }
 
 func (node *LeafNode) sync() {
-	if node.page.GetBytes() != nil && len(node.page.GetBytes()) != 0 {
-		// 先备份
-		// 前提是这页存在于磁盘上
-		// 即该页非空
-		node.rc.Record(node.page)
+	if node.page.GetBytes() != nil || len(node.page.GetBytes()) != 0 {
+		bs := make([]byte, 4096)
+		b := databox.IntToBytes(int64(node.page.GetPageID()))
+		// 至少要把pageID写上去捏
+		copy(bs[1:9], b[:])
+		node.page.WriteBytes(bs)
 	}
+	node.rc.Record(node.page)
 	node.page.WriteBytes(node.ToBytes())
 	// 设为脏页
 	node.page.Defile()
@@ -206,7 +209,7 @@ func LeafNodeFromPage(p *page.Page, bf buffer.BufferPool, rc trans.Recovery) *Le
 	copy(pageIDBytes[:], bs[1:9])
 	pageID := int(databox.BytesToInt(pageIDBytes))
 	if pageID != p.GetPageID() {
-		panic("Illegal Page ID: " + string(pageIDBytes[:]))
+		panic("Illegal Page ID: " + strconv.Itoa(pageID))
 	}
 	rightSiblingBytes := [8]byte{}
 	copy(rightSiblingBytes[:], bs[9:17])

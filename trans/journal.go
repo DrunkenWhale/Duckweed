@@ -1,6 +1,7 @@
 package trans
 
 import (
+	"Duckweed/databox"
 	"Duckweed/disk"
 	"Duckweed/page"
 )
@@ -54,7 +55,15 @@ func (r *JournalRecovery) Rollback() {
 	pageNum := r.journalDiskManager.GetNextFreePageID()
 	for i := 0; i < pageNum; i++ {
 		p := r.journalDiskManager.Read(i)
-		r.dbDiskManager.Write(p.GetPageID(), p)
+		if p.GetBytes()[0] == 4 {
+			// 元节点信息一定写在index=0处
+			r.dbDiskManager.Write(0, p)
+			continue
+		}
+		bs := [8]byte{}
+		copy(bs[:], p.GetBytes()[1:9])
+		pageID := int(databox.BytesToInt(bs))
+		r.dbDiskManager.Write(pageID, p)
 	}
 	r.End()
 	return
@@ -64,7 +73,7 @@ func (r *JournalRecovery) Rollback() {
 // 1: 原数据页不能是空的
 // 2: 已经写入磁盘过
 func (r *JournalRecovery) Record(p *page.Page) {
-	if !r.isInTransaction && p.GetPageID() != 0 {
+	if !r.isInTransaction {
 		// 如果不处于事务状态中则不记录
 		// 因为初始化的时候也会用到这个方法 所以得特判一下
 		//log.Println("operation not in transaction")

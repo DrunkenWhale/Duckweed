@@ -151,12 +151,15 @@ func (node *IndexNode) shouldSplit() bool {
 // 所以修改的时候会修改缓存中的页面
 // (前提是这个页是从缓存中拿取的)
 func (node *IndexNode) sync() {
-	if node.page.GetBytes() != nil && len(node.page.GetBytes()) != 0 {
-		// 先备份
-		// 前提是这页存在于磁盘上
-		// 即该页非空
-		node.rc.Record(node.page)
+	if node.page.GetBytes() != nil || len(node.page.GetBytes()) != 0 {
+		bs := make([]byte, 4096)
+		b := databox.IntToBytes(int64(node.page.GetPageID()))
+		// 至少要把pageID写上去捏
+		copy(bs[1:9], b[:])
+		node.page.WriteBytes(bs)
 	}
+	node.rc.Record(node.page)
+
 	// 更新内存中的表
 	node.page.WriteBytes(node.ToBytes())
 	// 设为脏页

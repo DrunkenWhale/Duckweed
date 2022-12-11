@@ -61,4 +61,5 @@ const (
 	FillFactor    = 0.75
 	IndexNodeFlag = iota + 1
 	LeafNodeFlag
+	MetaNodeFlag
 )

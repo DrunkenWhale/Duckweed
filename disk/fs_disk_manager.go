@@ -104,8 +104,10 @@ func (dm *FSDiskManager) GetNextFreePageID() int {
 }
 
 func (dm *FSDiskManager) Clear() {
-	err := dm.file.Truncate(0)
+	dm.close()
+	err := os.Remove(dm.storagePath + string(os.PathSeparator) + dm.filename + FileSuffix)
 	if err != nil {
 		panic(err)
 	}
+	dm.open()
 }
