@@ -47,17 +47,16 @@ func (dm *FSDiskManager) BatchWrite(pages []*page.Page) {
 }
 
 func (dm *FSDiskManager) open() {
-	storagePath := dm.storagePath + string(os.PathSeparator) + dm.filename
 	_, err := os.ReadDir(dm.storagePath)
 	if err != nil {
 		// 父目录不存在则递归创建
-		err := os.MkdirAll(storagePath, fs.ModePerm)
+		err := os.MkdirAll(dm.storagePath, fs.ModePerm)
 		if err != nil {
 			panic(err)
 		}
 	}
 	f, err := os.OpenFile(
-		storagePath+string(os.PathSeparator)+dm.filename+FileSuffix,
+		dm.storagePath+string(os.PathSeparator)+dm.filename+FileSuffix,
 		os.O_CREATE|os.O_RDWR,
 		fs.ModePerm)
 	if err != nil {
@@ -106,5 +105,8 @@ func (dm *FSDiskManager) GetNextFreePageID() int {
 }
 
 func (dm *FSDiskManager) Clear() {
-	dm.file.Truncate(0)
+	err := dm.file.Truncate(0)
+	if err != nil {
+		panic(err)
+	}
 }

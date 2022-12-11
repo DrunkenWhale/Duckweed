@@ -14,7 +14,7 @@ type JournalRecovery struct {
 	// pageID map to page
 	// 注意 这里的page应当是copy产生的
 	// 即被修改之前的page内容
-	dirtyPageTable map[int]*page.Page
+	dirtyPageTable map[int]*dirtyPageInfo
 }
 
 func NewJournalRecovery(disk disk.DiskManager) *JournalRecovery {
@@ -42,11 +42,6 @@ func (r *JournalRecovery) Commit() {
 	panic("implement me")
 }
 
-func (r *JournalRecovery) Abort() {
-	//TODO implement me
-	panic("implement me")
-}
-
 func (r *JournalRecovery) Rollback() {
 	//TODO implement me
 	panic("implement me")
@@ -61,11 +56,42 @@ func (r *JournalRecovery) Record(p *page.Page) {
 		// 如果不存在于脏页表中
 		// 那么要写进去捏
 		// 这样在回滚的时候才能恢复到最初的状态
-		r.dirtyPageTable[p.GetPageID()] = p.Copy()
+		r.dirtyPageTable[p.GetPageID()] =
+			&dirtyPageInfo{
+				hasFlashed: false,
+				page:       p.Copy(),
+			}
 		return
 	}
 	// 如果已经存在哩
 	// 那么覆写就没有意义了
 	// 我们应该保持它最初的状态捏
 	return
+}
+
+func (r *JournalRecovery) WriteBackups(pageID int) {
+	info, flag := r.dirtyPageTable[pageID]
+	if !flag {
+		// 不存在这个page
+		// 无需刷写
+		return
+	}
+	if info.hasFlashed {
+		// 如果它曾经被刷写过
+		// 没有必要重复刷写备份文件
+		return
+	}
+	// 刷写日志文件到磁盘
+	// 并且标记为已刷写过
+
+	r.disk.Write(info.page)
+	info.hasFlashed = true
+}
+
+type dirtyPageInfo struct {
+	page *page.Page
+
+	// 是否已刷写过
+	// 刷写过的备份页面无需再次刷写
+	hasFlashed bool
 }
