@@ -145,6 +145,12 @@ func (node *LeafNode) shouldSplit() bool {
 }
 
 func (node *LeafNode) sync() {
+	if node.page.GetBytes() != nil && len(node.page.GetBytes()) != 0 {
+		// 先备份
+		// 前提是这页存在于磁盘上
+		// 即该页非空
+		node.rc.Record(node.page)
+	}
 	node.page.WriteBytes(node.ToBytes())
 	// 设为脏页
 	node.page.Defile()

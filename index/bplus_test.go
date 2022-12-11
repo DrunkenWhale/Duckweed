@@ -40,6 +40,7 @@ func TestBPlus(t *testing.T) {
 
 func TestBPlusTree_Put1(t *testing.T) {
 	tree := NewBPlusTree("duckweed", 9)
+	tree.StartTransaction()
 	rand.Seed(time.Now().Unix())
 	for i := 0; i < 114514; i++ {
 		bytes := databox.IntToBytes(int64(rand.Int()))

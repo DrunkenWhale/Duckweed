@@ -50,7 +50,8 @@ func (tree *BPlusTree) Put(key int, bytes []byte) {
 		tree.root.sync()
 
 		// 储存 meta 信息的节点也要刷新一遍
-		GetTreeMetaNode(tree.bf).setRootNodeIDAndSync(newRoot.GetPage().GetPageID())
+		GetTreeMetaNode(tree.bf, tree.rc).
+			setRootNodeIDAndSync(newRoot.GetPage().GetPageID())
 		return
 	}
 	tree.root.sync()
@@ -72,6 +73,20 @@ func (tree *BPlusTree) Delete(key int) {
 	tree.root.Delete(key)
 }
 
+func (tree *BPlusTree) StartTransaction() {
+	tree.rc.StartTransaction()
+	GetTreeMetaNode(tree.bf, tree.rc).sync()
+	tree.rc.WriteBackups(1)
+}
+
+func (tree *BPlusTree) Commit() {
+	tree.rc.Commit()
+}
+
+func (tree *BPlusTree) Rollback() {
+	tree.rc.Rollback()
+}
+
 func (tree *BPlusTree) init() {
 	p := tree.bf.GetPage(0)
 	var root BPlusNode
@@ -80,6 +95,8 @@ func (tree *BPlusTree) init() {
 		// 说明这棵树是空的
 		node := &TreeMetaNode{
 			rootPageID: 0,
+			bf:         tree.bf,
+			rc:         tree.rc,
 			page:       tree.bf.FetchNewPage(),
 		}
 		if node.page.GetPageID() != 0 {
@@ -89,7 +106,7 @@ func (tree *BPlusTree) init() {
 		node.setRootNodeIDAndSync(root.GetPage().GetPageID())
 	} else {
 		// 该页存在 是有效的
-		node := GetTreeMetaNode(tree.bf)
+		node := GetTreeMetaNode(tree.bf, tree.rc)
 		rootNodePage := tree.bf.GetPage(node.GetRootNodeID())
 		root = FromPage(rootNodePage, tree.bf, tree.rc)
 	}

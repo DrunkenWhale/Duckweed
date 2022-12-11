@@ -21,6 +21,7 @@ func NewJournalRecovery(disk disk.DiskManager) *JournalRecovery {
 	return &JournalRecovery{
 		disk:            disk,
 		isInTransaction: false,
+		dirtyPageTable:  make(map[int]*dirtyPageInfo),
 	}
 }
 
@@ -32,9 +33,10 @@ func (r *JournalRecovery) StartTransaction() {
 }
 
 func (r *JournalRecovery) End() {
+	r.dirtyPageTable = make(map[int]*dirtyPageInfo)
+	r.isInTransaction = false
+	r.disk.Clear()
 
-	//TODO implement me
-	panic("implement me")
 }
 
 func (r *JournalRecovery) Commit() {
@@ -51,6 +53,12 @@ func (r *JournalRecovery) Rollback() {
 // 1: 原数据页不能是空的
 // 2: 已经写入磁盘过
 func (r *JournalRecovery) Record(p *page.Page) {
+	if !r.isInTransaction && p.GetPageID() != 0 {
+		// 如果不处于事务状态中则不记录
+		// 因为初始化的时候也会用到这个方法 所以得特判一下
+		panic("operation not in transaction")
+		return
+	}
 	_, flag := r.dirtyPageTable[p.GetPageID()]
 	if !flag {
 		// 如果不存在于脏页表中
@@ -70,6 +78,11 @@ func (r *JournalRecovery) Record(p *page.Page) {
 }
 
 func (r *JournalRecovery) WriteBackups(pageID int) {
+	if !r.isInTransaction {
+		// 如果不处于事务状态中则不写入
+		panic("operation not in transaction")
+		return
+	}
 	info, flag := r.dirtyPageTable[pageID]
 	if !flag {
 		// 不存在这个page
