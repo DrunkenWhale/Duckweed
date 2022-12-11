@@ -16,16 +16,15 @@ type BPlusTree struct {
 
 func NewBPlusTree(name string, ridLength int) *BPlusTree {
 	journalDiskManager := disk.NewFSDiskManager(name + "-journal")
-	rc := trans.NewJournalRecovery(journalDiskManager)
-	// 请注意 journal日志文件的disk manager和db的disk manager不是同一个
 	dbDiskManager := disk.NewFSDiskManager(name)
+	rc := trans.NewJournalRecovery(dbDiskManager, journalDiskManager)
 	bf := buffer.NewLRUBufferPool(dbDiskManager, rc)
 	tree := &BPlusTree{
 		bf:        bf,
-		root:      nil,
-		ridLength: ridLength,
 		dm:        dbDiskManager,
 		rc:        rc,
+		root:      nil,
+		ridLength: ridLength,
 	}
 	tree.init()
 	return tree
@@ -81,6 +80,7 @@ func (tree *BPlusTree) StartTransaction() {
 
 func (tree *BPlusTree) Commit() {
 	tree.rc.Commit()
+	tree.bf.Flush()
 }
 
 func (tree *BPlusTree) Rollback() {

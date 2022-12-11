@@ -6,8 +6,12 @@ import (
 )
 
 type JournalRecovery struct {
-	// 磁盘管理器是肯定的要的捏
-	disk disk.DiskManager
+	// journal日志的disk manager
+	journalDiskManager disk.DiskManager
+
+	// 数据库的disk manager
+	dbDiskManager disk.DiskManager
+
 	// 事务是否已经开启
 	isInTransaction bool
 
@@ -17,11 +21,12 @@ type JournalRecovery struct {
 	dirtyPageTable map[int]*dirtyPageInfo
 }
 
-func NewJournalRecovery(disk disk.DiskManager) *JournalRecovery {
+func NewJournalRecovery(dbDiskManager, journalDiskManager disk.DiskManager) *JournalRecovery {
 	return &JournalRecovery{
-		disk:            disk,
-		isInTransaction: false,
-		dirtyPageTable:  make(map[int]*dirtyPageInfo),
+		journalDiskManager: journalDiskManager,
+		dbDiskManager:      dbDiskManager,
+		isInTransaction:    false,
+		dirtyPageTable:     make(map[int]*dirtyPageInfo),
 	}
 }
 
@@ -35,18 +40,24 @@ func (r *JournalRecovery) StartTransaction() {
 func (r *JournalRecovery) End() {
 	r.dirtyPageTable = make(map[int]*dirtyPageInfo)
 	r.isInTransaction = false
-	r.disk.Clear()
+	r.journalDiskManager.Clear()
 
 }
 
+// 这个居然要配合外部实现 零昏！
 func (r *JournalRecovery) Commit() {
-	//TODO implement me
-	panic("implement me")
+	r.End()
+	return
 }
 
 func (r *JournalRecovery) Rollback() {
-	//TODO implement me
-	panic("implement me")
+	pageNum := r.journalDiskManager.GetNextFreePageID()
+	for i := 0; i < pageNum; i++ {
+		p := r.journalDiskManager.Read(i)
+		r.dbDiskManager.Write(p.GetPageID(), p)
+	}
+	r.End()
+	return
 }
 
 // 写入的原页需要满足
@@ -56,7 +67,7 @@ func (r *JournalRecovery) Record(p *page.Page) {
 	if !r.isInTransaction && p.GetPageID() != 0 {
 		// 如果不处于事务状态中则不记录
 		// 因为初始化的时候也会用到这个方法 所以得特判一下
-		panic("operation not in transaction")
+		//log.Println("operation not in transaction")
 		return
 	}
 	_, flag := r.dirtyPageTable[p.GetPageID()]
@@ -80,7 +91,7 @@ func (r *JournalRecovery) Record(p *page.Page) {
 func (r *JournalRecovery) WriteBackups(pageID int) {
 	if !r.isInTransaction {
 		// 如果不处于事务状态中则不写入
-		panic("operation not in transaction")
+		//log.Println("operation not in transaction")
 		return
 	}
 	info, flag := r.dirtyPageTable[pageID]
@@ -97,7 +108,7 @@ func (r *JournalRecovery) WriteBackups(pageID int) {
 	// 刷写日志文件到磁盘
 	// 并且标记为已刷写过
 	// 这里的磁盘上page的位置未必和page里的id相照应
-	r.disk.Write(r.disk.GetNextFreePageID(), info.page)
+	r.journalDiskManager.Write(r.journalDiskManager.GetNextFreePageID(), info.page)
 	info.hasFlashed = true
 }
 

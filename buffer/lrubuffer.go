@@ -64,12 +64,15 @@ func (bf *LRUBufferPool) GetPage(pageID int) *page.Page {
 			// 不可能不存在于map中
 			panic("Illegal BPlusNode Request")
 		}
-		// 先刷备份文件
-		bf.recovery.WriteBackups(p.GetPageID())
-		// 把页刷到磁盘上
-		bf.disk.Write(p.GetPageID(), p)
-		// 释放空间
-		delete(bf.pool, p.GetPageID())
+		// 如果是脏页 才需要刷写
+		if p.IsDirty() {
+			// 先刷备份文件
+			bf.recovery.WriteBackups(p.GetPageID())
+			// 把页刷到磁盘上
+			bf.disk.Write(p.GetPageID(), p)
+			// 释放空间
+			delete(bf.pool, p.GetPageID())
+		}
 	}
 	p, flag := bf.pool[pageID]
 	if flag {

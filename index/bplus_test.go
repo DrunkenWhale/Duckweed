@@ -13,9 +13,11 @@ import (
 )
 
 func TestBPlus(t *testing.T) {
+	dm := disk.NewFSDiskManager("duckweed")
+	jdm := disk.NewFSDiskManager("duckweed-journal")
 	pool := buffer.NewLRUBufferPool(
-		disk.NewFSDiskManager("duckweed"),
-		trans.NewJournalRecovery(disk.NewFSDiskManager("duckweed-journal")),
+		dm,
+		trans.NewJournalRecovery(dm, jdm),
 	)
 	keys := make([]int, 2)
 	keys[0] = 1
