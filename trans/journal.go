@@ -83,8 +83,8 @@ func (r *JournalRecovery) WriteBackups(pageID int) {
 	}
 	// 刷写日志文件到磁盘
 	// 并且标记为已刷写过
-
-	r.disk.Write(info.page)
+	// 这里的磁盘上page的位置未必和page里的id相照应
+	r.disk.Write(r.disk.GetNextFreePageID(), info.page)
 	info.hasFlashed = true
 }
 

@@ -4,6 +4,7 @@ import (
 	"Duckweed/buffer"
 	"Duckweed/databox"
 	"Duckweed/page"
+	"Duckweed/trans"
 )
 
 // index node in disk
@@ -26,15 +27,17 @@ const (
 
 type IndexNode struct {
 	bf          buffer.BufferPool
+	rc          trans.Recovery
 	maxKVNumber int
 	page        *page.Page
 	keys        []int // 键后续可能会扩展(多种类型) 但我要想先做个int的试试
 	children    []int
 }
 
-func NewIndexNode(bf buffer.BufferPool, keys []int, children []int) *IndexNode {
+func NewIndexNode(bf buffer.BufferPool, rc trans.Recovery, keys []int, children []int) *IndexNode {
 	return &IndexNode{
 		bf:          bf,
+		rc:          rc,
 		maxKVNumber: _maxIndexNodeKeysNumber,
 		page:        bf.FetchNewPage(),
 		keys:        keys,
@@ -54,7 +57,7 @@ func (node *IndexNode) getLeftmostNodeID() int {
 	// 你要是初始化当我没说
 	// 但是要是能访问到这里 说明已经分裂过了不是吗
 	// 所以还是不会越界
-	child := FromPage(node.bf.GetPage(node.children[0]), node.bf)
+	child := FromPage(node.bf.GetPage(node.children[0]), node.bf, node.rc)
 	return child.getLeftmostNodeID()
 }
 
@@ -86,7 +89,7 @@ func (node *IndexNode) Put(key int, value []byte) (int, int, bool) {
 			returnKey := node.keys[midIndex]
 			newKeys := node.keys[midIndex+1:]
 			newChildren := node.children[midIndex+1:]
-			splitNode := NewIndexNode(node.bf, newKeys, newChildren)
+			splitNode := NewIndexNode(node.bf, node.rc, newKeys, newChildren)
 			node.keys = node.keys[:midIndex]
 			node.children = node.children[:midIndex+1]
 			splitNode.sync()
@@ -100,7 +103,7 @@ func (node *IndexNode) Put(key int, value []byte) (int, int, bool) {
 
 func (node *IndexNode) FetchNode(pageID int) BPlusNode {
 	p := node.bf.GetPage(pageID)
-	n := FromPage(p, node.bf)
+	n := FromPage(p, node.bf, node.rc)
 	return n
 }
 
@@ -160,7 +163,7 @@ func (node *IndexNode) numLessThan(num int) int {
 
 // IndexNodeFromPage
 // 从page中构建index node
-func IndexNodeFromPage(p *page.Page, bf buffer.BufferPool) *IndexNode {
+func IndexNodeFromPage(p *page.Page, bf buffer.BufferPool, rc trans.Recovery) *IndexNode {
 	bytes := p.GetBytes()
 	pageIDBytes := [8]byte{}
 	copy(pageIDBytes[:], bytes[1:9])
@@ -192,6 +195,7 @@ func IndexNodeFromPage(p *page.Page, bf buffer.BufferPool) *IndexNode {
 	}
 	node := &IndexNode{
 		bf:          bf,
+		rc:          rc,
 		maxKVNumber: int(maxKeysNumber),
 		page:        p,
 		keys:        keys,

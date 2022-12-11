@@ -1,14 +1,18 @@
 package index
 
-import "Duckweed/buffer"
+import (
+	"Duckweed/buffer"
+	"Duckweed/trans"
+)
 
-func NewIter(leftmostPageID int, bf buffer.BufferPool) *Iter {
+func NewIter(leftmostPageID int, bf buffer.BufferPool, rc trans.Recovery) *Iter {
 	return &Iter{
 		nextPageID: leftmostPageID,
 		keys:       make([]int, 0),
 		records:    make([][]byte, 0),
 		index:      -1,
 		bf:         bf,
+		rc:         rc,
 	}
 }
 
@@ -27,6 +31,9 @@ type Iter struct {
 
 	// B+树所在的内存池
 	bf buffer.BufferPool
+
+	// 恢复用的东西捏
+	rc trans.Recovery
 }
 
 // 正常返回kv键值
@@ -40,7 +47,7 @@ func (i *Iter) Next() (int, []byte) {
 		for i.nextPageID != -1 {
 			p := i.bf.GetPage(i.nextPageID)
 			// 怎么说扫的都应该是叶子节点
-			node := FromPage(p, i.bf).(*LeafNode)
+			node := FromPage(p, i.bf, i.rc).(*LeafNode)
 			i.nextPageID = node.rightSibling
 			i.keys = node.keys
 			i.records = node.rids

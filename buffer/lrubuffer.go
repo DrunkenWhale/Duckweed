@@ -4,6 +4,7 @@ import (
 	"Duckweed/disk"
 	"Duckweed/lru"
 	"Duckweed/page"
+	"Duckweed/trans"
 )
 
 type LRUBufferPool struct {
@@ -12,6 +13,7 @@ type LRUBufferPool struct {
 	pool           map[int]*page.Page
 	lru2q          *lru.LRU2Q
 	disk           disk.DiskManager
+	recovery       trans.Recovery
 }
 
 func (bf *LRUBufferPool) FetchNewPage() *page.Page {
@@ -21,12 +23,13 @@ func (bf *LRUBufferPool) FetchNewPage() *page.Page {
 	return p
 }
 
-func NewLRUBufferPool(name string) *LRUBufferPool {
+func NewLRUBufferPool(diskManager disk.DiskManager, recovery trans.Recovery) *LRUBufferPool {
 	bf := &LRUBufferPool{
 		pageNumber: MaxPageNumber,
 		pool:       make(map[int]*page.Page),
 		lru2q:      lru.NewLRU2Q(MaxPageNumber/4*3, MaxPageNumber/4),
-		disk:       disk.NewFSDiskManager(name),
+		disk:       diskManager,
+		recovery:   recovery,
 	}
 	bf.nextFreePageID = bf.disk.GetNextFreePageID()
 	return bf
@@ -61,8 +64,10 @@ func (bf *LRUBufferPool) GetPage(pageID int) *page.Page {
 			// 不可能不存在于map中
 			panic("Illegal BPlusNode Request")
 		}
+		// 先刷备份文件
+		bf.recovery.WriteBackups(p.GetPageID())
 		// 把页刷到磁盘上
-		bf.disk.Write(p)
+		bf.disk.Write(p.GetPageID(), p)
 		// 释放空间
 		delete(bf.pool, p.GetPageID())
 	}

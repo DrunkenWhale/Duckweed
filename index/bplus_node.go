@@ -3,6 +3,7 @@ package index
 import (
 	"Duckweed/buffer"
 	"Duckweed/page"
+	"Duckweed/trans"
 )
 
 type BPlusNode interface {
@@ -43,15 +44,17 @@ type BPlusNode interface {
 	sync()
 }
 
-func FromPage(page *page.Page, bf buffer.BufferPool) BPlusNode {
+func FromPage(page *page.Page, bf buffer.BufferPool, rc trans.Recovery) BPlusNode {
 	flag := page.GetBytes()[0]
+	var node BPlusNode = nil
 	if flag == IndexNodeFlag {
-		return IndexNodeFromPage(page, bf)
+		node = IndexNodeFromPage(page, bf, rc)
 	} else if flag == LeafNodeFlag {
-		return LeafNodeFromPage(page, bf)
+		node = LeafNodeFromPage(page, bf, rc)
 	} else {
 		panic("Illegal Page!")
 	}
+	return node
 }
 
 const (

@@ -2,20 +2,30 @@ package index
 
 import (
 	"Duckweed/buffer"
+	"Duckweed/disk"
+	"Duckweed/trans"
 )
 
 type BPlusTree struct {
 	bf        buffer.BufferPool
+	dm        disk.DiskManager
+	rc        trans.Recovery
 	root      BPlusNode
 	ridLength int
 }
 
-func NewBPlusTree(ridLength int) *BPlusTree {
-	bf := buffer.NewLRUBufferPool("duckweed")
+func NewBPlusTree(name string, ridLength int) *BPlusTree {
+	journalDiskManager := disk.NewFSDiskManager(name + "-journal")
+	rc := trans.NewJournalRecovery(journalDiskManager)
+	// 请注意 journal日志文件的disk manager和db的disk manager不是同一个
+	dbDiskManager := disk.NewFSDiskManager(name)
+	bf := buffer.NewLRUBufferPool(dbDiskManager, rc)
 	tree := &BPlusTree{
 		bf:        bf,
 		root:      nil,
 		ridLength: ridLength,
+		dm:        dbDiskManager,
+		rc:        rc,
 	}
 	tree.init()
 	return tree
@@ -35,7 +45,7 @@ func (tree *BPlusTree) Put(key int, bytes []byte) {
 		newRootChildren := make([]int, 2)
 		newRootChildren[0] = tree.root.GetPage().GetPageID()
 		newRootChildren[1] = newNodeID
-		newRoot := NewIndexNode(tree.bf, newRootKeys, newRootChildren)
+		newRoot := NewIndexNode(tree.bf, tree.rc, newRootKeys, newRootChildren)
 		tree.root = newRoot
 		tree.root.sync()
 
@@ -48,7 +58,7 @@ func (tree *BPlusTree) Put(key int, bytes []byte) {
 
 func (tree *BPlusTree) Scan() *Iter {
 	leftmostNodeID := tree.root.getLeftmostNodeID()
-	return NewIter(leftmostNodeID, tree.bf)
+	return NewIter(leftmostNodeID, tree.bf, tree.rc)
 }
 
 func (tree *BPlusTree) Update(key int, value []byte) {
@@ -75,13 +85,13 @@ func (tree *BPlusTree) init() {
 		if node.page.GetPageID() != 0 {
 			panic("Not an empty B+ Tree, please check race condition!")
 		}
-		root = NewLeafNode(tree.bf, tree.ridLength, -1, make([]int, 0), make([][]byte, 0))
+		root = NewLeafNode(tree.bf, tree.rc, tree.ridLength, -1, make([]int, 0), make([][]byte, 0))
 		node.setRootNodeIDAndSync(root.GetPage().GetPageID())
 	} else {
 		// 该页存在 是有效的
 		node := GetTreeMetaNode(tree.bf)
 		rootNodePage := tree.bf.GetPage(node.GetRootNodeID())
-		root = FromPage(rootNodePage, tree.bf)
+		root = FromPage(rootNodePage, tree.bf, tree.rc)
 	}
 	tree.root = root
 }

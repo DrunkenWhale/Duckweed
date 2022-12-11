@@ -29,8 +29,7 @@ func NewFSDiskManager(filename string) *FSDiskManager {
 	return dm
 }
 
-func (dm *FSDiskManager) Write(page *page.Page) {
-	pageID := page.GetPageID()
+func (dm *FSDiskManager) Write(pageID int, page *page.Page) {
 	bytes := page.GetBytes()
 	dm.writePageBytes(bytes, pageID)
 }
@@ -42,7 +41,7 @@ func (dm *FSDiskManager) Read(pageID int) *page.Page {
 
 func (dm *FSDiskManager) BatchWrite(pages []*page.Page) {
 	for _, p := range pages {
-		dm.Write(p)
+		dm.Write(p.GetPageID(), p)
 	}
 }
 

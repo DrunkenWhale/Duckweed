@@ -4,6 +4,7 @@ import (
 	"Duckweed/buffer"
 	"Duckweed/databox"
 	"Duckweed/page"
+	"Duckweed/trans"
 	"bytes"
 )
 
@@ -23,6 +24,7 @@ const (
 
 type LeafNode struct {
 	bf           buffer.BufferPool
+	rc           trans.Recovery
 	maxKVNumber  int
 	ridLength    int
 	rightSibling int
@@ -31,9 +33,10 @@ type LeafNode struct {
 	rids         [][]byte
 }
 
-func NewLeafNode(bf buffer.BufferPool, ridLength, rightSibling int, keys []int, rids [][]byte) *LeafNode {
+func NewLeafNode(bf buffer.BufferPool, rc trans.Recovery, ridLength, rightSibling int, keys []int, rids [][]byte) *LeafNode {
 	return &LeafNode{
 		bf:           bf,
+		rc:           rc,
 		maxKVNumber:  ((page.PageSize - leafHeaderSize) / (8 + ridLength)) - 3,
 		ridLength:    ridLength,
 		rightSibling: rightSibling,
@@ -116,7 +119,14 @@ func (node *LeafNode) Put(key int, value []byte) (int, int, bool) {
 	if node.shouldSplit() {
 		// 需要分裂
 		midIndex := len(node.keys) / 2
-		newLeafNode := NewLeafNode(node.bf, node.ridLength, node.rightSibling, node.keys[midIndex:], node.rids[midIndex:])
+		newLeafNode := NewLeafNode(
+			node.bf,
+			node.rc,
+			node.ridLength,
+			node.rightSibling,
+			node.keys[midIndex:],
+			node.rids[midIndex:],
+		)
 		node.keys = node.keys[:midIndex]
 		node.rids = node.rids[:midIndex]
 		node.rightSibling = newLeafNode.GetPage().GetPageID()
@@ -146,7 +156,7 @@ func (node *LeafNode) GetPage() *page.Page {
 
 func (node *LeafNode) FetchNode(pageID int) BPlusNode {
 	p := node.bf.GetPage(pageID)
-	n := FromPage(p, node.bf)
+	n := FromPage(p, node.bf, node.rc)
 	return n
 }
 
@@ -184,7 +194,7 @@ func (node *LeafNode) ToBytes() []byte {
 	return b
 }
 
-func LeafNodeFromPage(p *page.Page, bf buffer.BufferPool) *LeafNode {
+func LeafNodeFromPage(p *page.Page, bf buffer.BufferPool, rc trans.Recovery) *LeafNode {
 	bs := p.GetBytes()
 	pageIDBytes := [8]byte{}
 	copy(pageIDBytes[:], bs[1:9])
@@ -192,7 +202,6 @@ func LeafNodeFromPage(p *page.Page, bf buffer.BufferPool) *LeafNode {
 	if pageID != p.GetPageID() {
 		panic("Illegal Page ID: " + string(pageIDBytes[:]))
 	}
-
 	rightSiblingBytes := [8]byte{}
 	copy(rightSiblingBytes[:], bs[9:17])
 	rightSibling := int(databox.BytesToInt(rightSiblingBytes))
@@ -224,6 +233,7 @@ func LeafNodeFromPage(p *page.Page, bf buffer.BufferPool) *LeafNode {
 	}
 	node := &LeafNode{
 		bf:           bf,
+		rc:           rc,
 		maxKVNumber:  maxKeysNumber,
 		ridLength:    ridLength,
 		page:         p,
