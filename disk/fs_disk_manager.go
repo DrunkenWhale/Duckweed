@@ -104,3 +104,7 @@ func (dm *FSDiskManager) GetNextFreePageID() int {
 	}
 	return int(info.Size() / int64(page.PageSize))
 }
+
+func (dm *FSDiskManager) Clear() {
+	dm.file.Truncate(0)
+}
