@@ -16,13 +16,13 @@ const (
 func FieldTypeLength(tpe FieldType) int {
 	switch tpe {
 	case IntField:
-		return 32
+		return 8
 	case LongField:
-		return 64
+		return 8
 	case FloatField:
-		return 32
+		return 8
 	case DoubleField:
-		return 64
+		return 8
 	case BoolField:
 		return 1
 	case StringField:

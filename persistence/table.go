@@ -21,7 +21,7 @@ func NewTable[T any](name string, model *T) {
 	table.tpe = tpe
 	for i := 0; i < tpe.NumField(); i++ {
 		field := tpe.Field(i)
-		// 如果不是public的 则加入fields中
+		// 如果是public的 则加入fields中
 		if field.IsExported() {
 			table.fields = append(
 				table.fields,
@@ -51,10 +51,12 @@ func (t *Table[T]) Get(key int) (T, bool) {
 
 }
 
-func (t *Table[T]) generateStructFromBytes() {
+func (t *Table[T]) generateStructFromBytes(bytes []byte) {
 	res := reflect.New(t.tpe)
 	ele := res.Elem()
 	for i := 0; i < ele.NumField(); i++ {
+		var data any = nil
+
 		injectDataToField(ele.Field(i), t.fields[i].Tpe, nil) // 各种类型的转换我还没写好... 刚想起来就写了个int的
 	}
 }
